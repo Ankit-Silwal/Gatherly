@@ -13,15 +13,21 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/nodemailer": "^7.0.10",
+    "@types/redis": "^4.0.11",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "http": "^0.0.1-security",
+    "nodemailer": "^8.0.1",
     "nodemon": "^3.1.11",
+    "redis": "^5.11.0",
     "socket.io": "^4.8.3"
   }
 }

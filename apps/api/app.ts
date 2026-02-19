@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { setUpRoutes } from "./routes";
-import { connectDB } from "./config/db";
+import { connectDB } from "./src/config/db";
 
 const app=express();
 app.use(express.json());
