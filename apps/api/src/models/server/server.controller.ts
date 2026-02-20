@@ -1,4 +1,4 @@
-import { createServer, joinServer, getAllServers } from "./server.service";
+import { createServer, joinServer, getAllServers, getServerDetails } from "./server.service";
 import type { Request, Response } from "express";
 
 export async function handleCreateServer(req: Request, res: Response) {
@@ -72,6 +72,35 @@ export async function handleGetAllServers(req: Request, res: Response) {
     const servers = await getAllServers(userId.toString());
     return res.status(200).json({
       servers,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error,
+    });
+  }
+}
+
+export async function handleServerDetails(req: Request, res: Response) {
+  try {
+    const rawServerId = req.params.serverId;
+    const serverId = Array.isArray(rawServerId) ? rawServerId[0] : rawServerId;
+    if (!serverId) {
+      return res.status(400).json({
+        message: "Server id is required",
+      });
+    }
+
+    const details = await getServerDetails(serverId);
+    const memberCount = Number(details.rows[0]?.member_count ?? 0);
+
+    if (memberCount === 0) {
+      return res.status(404).json({
+        message: "The server doesn't exist",
+      });
+    }
+
+    return res.status(200).json({
+      members: memberCount,
     });
   } catch (error) {
     return res.status(500).json({
