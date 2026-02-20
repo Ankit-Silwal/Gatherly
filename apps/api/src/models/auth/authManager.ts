@@ -14,6 +14,13 @@ import {
   verifyResentForgotPasswordOtp as verifyResentForgotPasswordOtpCode,
 } from "./otpManager.js";
 import REDIS_CLIENT from "../../config/redis.js";
+import {
+  createSession,
+  deleteAllSession,
+  deleteSession,
+  getAllSession,
+  removeSpecificSession,
+} from "./sessionManager.js";
 
 declare global {
   namespace Express {
@@ -270,7 +277,13 @@ export const loginUser = async (
         message: "This email isn't verified please verify this email",
       });
     }
-    // session task remaining in here
+    const sessionId=await createSession(user.id,req);
+    res.cookie("sessionId",sessionId,{
+      httpOnly:true,
+      secure:false,
+      sameSite:"lax",
+      maxAge:24*60*60*1000  //since the time is in mili second thus multiplying by  1000
+    })
     
     console.log("Login successful for user:", user.email);
     return res.status(200).json({
@@ -551,4 +564,101 @@ export const changeForgotPassword = async (
     message: "The password was changed successfully",
   });
 };
+
+export async function getMySessions(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  const sessions = await getAllSession(userId);
+  return res.status(200).json({
+    success: true,
+    sessions,
+    currentSessionId: req.cookies?.sessionId ?? null,
+  });
+}
+
+export async function logoutCurrentSession(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  const response = await deleteSession(userId, req, res);
+  res.clearCookie("sessionId");
+
+  if (!response.success) {
+    return res.status(400).json(response);
+  }
+
+  return res.status(200).json(response);
+}
+
+export async function logoutAllUserSessions(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const userId = req.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  const response = await deleteAllSession(userId, req);
+  res.clearCookie("sessionId");
+
+  return res.status(200).json(response);
+}
+
+export async function logoutSpecificSession(
+  req: Request,
+  res: Response
+): Promise<Response> {
+  const userId = req.userId;
+  const { sessionId } = req.params as { sessionId?: string };
+
+  if (!userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
+
+  if (!sessionId) {
+    return res.status(400).json({
+      success: false,
+      message: "Please provide the required sessionId",
+    });
+  }
+
+  const response = await removeSpecificSession(userId, sessionId);
+
+  if (req.cookies?.sessionId === sessionId) {
+    res.clearCookie("sessionId");
+  }
+
+  if (!response.success) {
+    return res.status(404).json(response);
+  }
+
+  return res.status(200).json(response);
+}
 
