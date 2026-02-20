@@ -1,8 +1,9 @@
 import { type Application } from "express";
-import serverRoutes from "./src/models/server/server.routes.js";
-import authRoutes from "./src/models/auth/auth.routes.js";
-
+import serverRoutes from "./src/modules/server/server.routes.js";
+import authRoutes from "./src/modules/auth/auth.routes.js";
+import memberRoutes from "./src/modules/member/member.routes.js";
 export const setUpRoutes = (app: Application) => {
 	app.use("/auth", authRoutes);
   app.use("/server",serverRoutes);
+  app.use("/servers/:serverId",memberRoutes);
 };
