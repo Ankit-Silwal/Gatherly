@@ -1,4 +1,10 @@
-import { createServer, joinServer, getAllServers, getServerDetails } from "./server.service";
+import {
+  createServer,
+  joinServer,
+  getAllServers,
+  getServerDetails,
+  deleteServer,
+} from "./server.service";
 import type { Request, Response } from "express";
 
 export async function handleCreateServer(req: Request, res: Response) {
@@ -105,6 +111,44 @@ export async function handleServerDetails(req: Request, res: Response) {
   } catch (error) {
     return res.status(500).json({
       error,
+    });
+  }
+}
+
+export async function handleDeleteServer(req: Request, res: Response) {
+  try {
+    const rawSessionId = req.params.sessionId;
+    const sessionId = Array.isArray(rawSessionId) ? rawSessionId[0] : rawSessionId;
+    const userId = req.userId;
+    if (!sessionId) {
+      return res.status(400).json({
+        message: "Session id is required",
+      });
+    }
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+    const result = await deleteServer(sessionId, userId.toString());
+    return res.status(200).json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    if (message === "Server not found") {
+      return res.status(404).json({
+        message,
+      });
+    }
+
+    if (message === "Unauthorized") {
+      return res.status(403).json({
+        message,
+      });
+    }
+
+    return res.status(500).json({
+      message: `Error: ${message}`,
     });
   }
 }

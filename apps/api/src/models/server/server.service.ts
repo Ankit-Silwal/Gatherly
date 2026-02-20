@@ -82,7 +82,7 @@ export async function getAllServers(userId:string){
   }
 }
 
-export async function getServerDetials(serverId:string){
+export async function getServerDetails(serverId:string){
   const client=await pool.connect();
   try{
     client.query("BEGIN");
@@ -96,6 +96,55 @@ export async function getServerDetials(serverId:string){
   }catch(error){
     throw error;
   }finally{
+    client.release();
+  }
+}
+
+export async function deleteServer(
+  serverId: string,
+  userId: string
+)
+{
+  const client = await pool.connect();
+
+  try
+  {
+    await client.query("BEGIN");
+
+    const serverResult = await client.query(
+      `
+      SELECT owner_id
+      FROM servers
+      WHERE id = $1
+      `,
+      [serverId]
+    );
+    if (serverResult.rowCount === 0)
+    {
+      throw new Error("Server not found");
+    }
+    const server = serverResult.rows[0];
+    if (server.owner_id !== userId)
+    {
+      throw new Error("Unauthorized");
+    }
+    await client.query(
+      `
+      DELETE FROM servers
+      WHERE id = $1
+      `,
+      [serverId]
+    );
+    await client.query("COMMIT");
+    return { message: "Server deleted successfully" };
+  }
+  catch (err)
+  {
+    await client.query("ROLLBACK");
+    throw err;
+  }
+  finally
+  {
     client.release();
   }
 }
