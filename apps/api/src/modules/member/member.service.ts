@@ -113,7 +113,7 @@ export async function kickMember(
     if (requester.rowCount === 0)
       throw new Error("Not a server member");
 
-    if (requester.rows[0].role !== "owner")
+    if (requester.rows[0].role !== "owner"|| "moderator")
       throw new Error("Unauthorized");
 
     const target = await client.query(

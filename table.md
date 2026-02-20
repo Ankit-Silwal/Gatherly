@@ -15,3 +15,15 @@ CREATE TABLE server_members (
   joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(server_id, user_id)
 );
+
+CREATE TABLE channels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  server_id UUID NOT NULL REFERENCES servers(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('text', 'voice')) DEFAULT 'text',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (server_id, name)
+);
+
+CREATE INDEX idx_channels_server_id 
+ON channels(server_id);
