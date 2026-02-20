@@ -28,5 +28,5 @@ export async function createServer(name:string,description:string,ownerId:string
   }finally{
     client.release()
   }
-
 }
+
