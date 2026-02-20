@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { handleCreateServer, handleJoinServer } from "./server.controller";
+import { handleCreateServer, handleGetAllServers, handleJoinServer } from "./server.controller";
 import { requireSession } from "../../middlewares/authSession";
 
 const router=Router();
-router.post('create-server/',requireSession,handleCreateServer);
-router.post('/join-server',requireSession,handleJoinServer)
-
+router.post('/create',requireSession,handleCreateServer);
+router.post('/join',requireSession,handleJoinServer)
+router.get('/',requireSession,handleGetAllServers)
 export default router;
