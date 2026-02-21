@@ -3,9 +3,12 @@ import serverRoutes from "./src/modules/server/server.routes.js";
 import authRoutes from "./src/modules/auth/auth.routes.js";
 import memberRoutes from "./src/modules/member/member.routes.js";
 import channelRoutes from "./src/modules/channel/channel.routes.js";
+import messageRouter from "./src/modules/messages/message.router.js";
+
 export const setUpRoutes = (app: Application) => {
 	app.use("/auth", authRoutes);
   app.use("/server",serverRoutes);
   app.use("/servers/:serverId",memberRoutes);
   app.use("/server/:serverId/channels",channelRoutes);
+  app.use("/server/:serverId/channels/:channelId/messages",messageRouter);
 };

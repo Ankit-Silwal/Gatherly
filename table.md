@@ -27,3 +27,15 @@ CREATE TABLE channels (
 
 CREATE INDEX idx_channels_server_id 
 ON channels(server_id);
+
+CREATE TABLE messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  channel_id UUID NOT NULL REFERENCES channels(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  content TEXT,
+  file_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_messages_channel_id
+ON messages(channel_id);
