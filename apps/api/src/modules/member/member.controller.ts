@@ -33,9 +33,8 @@ export async function handleChangeRole(
   try
   {
     const rawServerId = req.params.serverId;
-    const rawUserId = req.params.userId;
+    const userId = req.userId;
     const serverId = Array.isArray(rawServerId) ? rawServerId[0] : rawServerId;
-    const userId = Array.isArray(rawUserId) ? rawUserId[0] : rawUserId;
     const { role } = req.body;
 
     if (!serverId || !userId)
