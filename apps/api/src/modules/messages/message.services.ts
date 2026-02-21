@@ -56,3 +56,48 @@ export async function createMessage(
     client.release();
   }
 }
+
+export async function getMessage(channelId:string,userId:string,cursor?:string,limit:number=20){
+  const client=await pool.connect();
+  try{
+    const channel=await client.query(`
+      select server_id
+      from channels
+      where id=$1  
+    `,[channelId]);
+    if(channel.rowCount===0){
+      throw new Error("Channel wasnt found sir");
+    }
+    const serverId=channel.rows[0].server_id;
+    const membership=await client.query(`
+      select 1 
+      from server_members
+      where server_id=$1 and user_id=$2  
+    `,[serverId,userId])
+    if(membership.rowCount===0){
+      throw new Error("Unauthorize")
+    }
+
+    let query=`
+      select * from
+      messages
+      where channel_id=$1    
+    `;
+    const values:any[]=[channelId];
+
+    if(cursor){
+      query+=`And created_at <$2`;
+      values.push(cursor);
+    }
+    query+=`
+      order by created_at desc
+      limit ${limit}
+    `
+
+    const result=await client.query(query,values);
+    return result.rows;
+  }finally{
+    client.release();
+  }
+
+}
