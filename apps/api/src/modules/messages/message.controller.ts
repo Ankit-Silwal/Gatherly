@@ -15,10 +15,8 @@ export async function handleCreateMessage(
     const { channelId } = req.params;
     const { content } = req.body;
     const userId = req.userId!;
-
     if (!content)
       return res.status(400).json({ message: "Content required" });
-
     const message = await createMessage(
       channelId,
       content,
