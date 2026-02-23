@@ -1,40 +1,31 @@
 import type { NextFunction, Request, Response } from "express";
-import REDIS_CLIENT from "../config/redis.js";
+import { getUserSession } from "../utils/session.utils";
 
 export async function requireSession(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void | Response> {
-  const sessionId = req.cookies?.sessionId as string | undefined;
+): Promise<void | Response>
+{
+  const sessionId = req.cookies?.sessionId;
 
-  if (!sessionId) {
+  if (!sessionId)
     return res.status(401).json({
       success: false,
-      message: "Unauthorized: session not found",
+      message: "Unauthorized"
     });
-  }
 
-  const sessionKey = `session:${sessionId}`;
-  const rawSession = await REDIS_CLIENT.get(sessionKey);
+  const userId = await getUserSession(sessionId);
 
-  if (!rawSession) {
+  if (!userId)
+  {
     res.clearCookie("sessionId");
     return res.status(401).json({
       success: false,
-      message: "Unauthorized: session expired",
+      message: "Unauthorized"
     });
   }
 
-  const sessionData = JSON.parse(rawSession) as { userId?: string };
-
-  if (!sessionData.userId) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized: invalid session",
-    });
-  }
-
-  req.userId = sessionData.userId;
+  req.userId = userId;
   next();
 }

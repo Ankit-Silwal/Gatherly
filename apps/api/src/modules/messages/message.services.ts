@@ -66,7 +66,7 @@ export async function getMessage(channelId:string,userId:string,cursor?:string,l
       where id=$1  
     `,[channelId]);
     if(channel.rowCount===0){
-      throw new Error("Channel wasnt found sir");
+      throw new Error("Channel wasn't found sir");
     }
     const serverId=channel.rows[0].server_id;
     const membership=await client.query(`
