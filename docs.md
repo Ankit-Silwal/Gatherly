@@ -32,11 +32,12 @@ Root scripts (`package.json`):
 - Cache/session/OTP: Redis
 - Auth: Cookie-based session (`sessionId` cookie)
 - Email: Nodemailer (SMTP)
+- Logging: Winston (`logs/combined.log`, `logs/error.log`)
 
 ### Server Bootstrap
 
 - `index.ts`: loads env with `dotenv`, starts HTTP server
-- `app.ts`: configures middlewares (`express.json`, `cors`, `cookie-parser`), initializes DB/Redis, mounts routes, and exposes `/health`
+- `app.ts`: configures middlewares (`express.json`, `cors`, `cookie-parser`), initializes DB/Redis, mounts routes, exposes `/health`, and includes global error logging middleware
 
 ### Mounted Route Prefixes
 
@@ -171,6 +172,7 @@ All read `req.userId` + `req.params.serverId`, fetch role from `server_members`,
 
 - Presence tracking with Redis + in-memory socket map
   - emits `user-online` and `user_offline`
+  - logs `Socket connected` and `Socket disconnected`
 - Channel room operations
   - `join_channel`, `leave_channel`
 - Message events
@@ -192,7 +194,22 @@ All read `req.userId` + `req.params.serverId`, fetch role from `server_members`,
 
 ---
 
-## 8) Database Interaction Areas
+## 8) Logging & Error Handling
+
+- Logger: `apps/api/src/utils/logger.ts` (Winston JSON logs)
+- Global Express error middleware logs unhandled errors with:
+  - request path
+  - HTTP method
+  - error message
+- Message service logs include:
+  - `Message created` (`userId`, `channelId`, `messageId`)
+  - `Unauthorized attempt` for invalid delete actions
+  - `Message deleted` with server context
+  - `Database transaction failed` for transaction errors
+
+---
+
+## 9) Database Interaction Areas
 
 Current queries touch these logical tables:
 
@@ -208,7 +225,7 @@ No Prisma or ORM is used currently; queries are written directly with `pg`.
 
 ---
 
-## 9) Frontend (`apps/web`) Current State
+## 10) Frontend (`apps/web`) Current State
 
 - Next.js app scaffold is present
 - Home page is default starter-style page
@@ -224,7 +241,7 @@ Scripts:
 
 ---
 
-## 10) Shared UI Package (`packages/ui`)
+## 11) Shared UI Package (`packages/ui`)
 
 Current exported components:
 
@@ -236,7 +253,7 @@ Current exported components:
 
 ---
 
-## 11) Recent Fixes Applied
+## 12) Recent Fixes Applied
 
 - Fixed session/auth typing and import issues in middleware and session utilities.
 - Moved `handleEditMessage` to `messages/message.controller.ts` (controller layer), while keeping DB logic in `messages/message.services.ts`.
@@ -247,10 +264,13 @@ Current exported components:
 - Added socket send-message rate limiting via Redis (`INCR` + `EXPIRE`).
 - Updated message delete flow to return payload (`messageId`, `channel_id`) for socket broadcasts.
 - Added `server_audit_logs` insert for `message_delete` actions.
+- Added global Express unhandled error logging middleware.
+- Added socket connect/disconnect logging.
+- Added unauthorized/delete and transaction-failure logs for message delete flow.
 
 ---
 
-## 12) Current Status Snapshot
+## 13) Current Status Snapshot
 
 What is working conceptually now:
 
@@ -261,6 +281,7 @@ What is working conceptually now:
 - Channel creation endpoint with role guard
 - Message create/list/edit/delete endpoints
 - Real-time messaging events (send/edit/delete/typing/presence/read)
+- Structured JSON logging for app/socket/message lifecycle and failures
 
 What is still early-stage:
 
@@ -270,7 +291,7 @@ What is still early-stage:
 
 ---
 
-## 13) Quick Start (current)
+## 14) Quick Start (current)
 
 From repo root:
 
