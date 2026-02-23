@@ -1,5 +1,5 @@
 import { Server,Socket } from "socket.io";
-import { createMessage, deleteMessage, editMessage } from "./message.services";
+import { createMessage, deleteMessage, editMessage, markChannelRead } from "./message.services";
 import REDIS_CLIENT from "../../config/redis";
 const userSocketMap=new Map<string,Set<string>>();
 export function registerMessageSocket(io:Server){
@@ -67,7 +67,13 @@ export function registerMessageSocket(io:Server){
         socket.emit("error_message","Delete failed")
       }
     })
-    
+    socket.on("mark_read",async (data:{channelId:string,messageId:string})=>{
+      await markChannelRead(
+        data.channelId,
+        data.messageId,
+        userId
+      )
+    })
 
     socket.on("disconnect",async()=>{
       const sockets=userSocketMap.get(userId);

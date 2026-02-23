@@ -195,3 +195,23 @@ export async function deleteMessage(messageId:string,userId:string){
     client.release();
   }
 }
+
+export async function markChannelRead(
+  channelId: string,
+  messageId: string,
+  userId: string
+)
+{
+  await pool.query(
+    `
+    INSERT INTO channel_reads
+    (channel_id, user_id, last_read_message_id, last_read_at)
+    VALUES ($1, $2, $3, NOW())
+    ON CONFLICT (channel_id, user_id)
+    DO UPDATE SET
+      last_read_message_id = $3,
+      last_read_at = NOW()
+    `,
+    [channelId, userId, messageId]
+  );
+}
