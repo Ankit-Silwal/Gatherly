@@ -1,6 +1,6 @@
 import REDIS_CLIENT from "../config/redis";
 
-export async function getUserSession(sessionId:string):Promise<string | null> {
+export async function getUserFromSession(sessionId:string):Promise<string | null> {
   const rawSession=await REDIS_CLIENT.get(`session:${sessionId}`)
 
   if(!sessionId){

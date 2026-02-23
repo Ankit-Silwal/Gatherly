@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { getUserSession } from "../utils/session.utils";
+import { getUserFromSession } from "../utils/session.utils";
 
 export async function requireSession(
   req: Request,
@@ -15,7 +15,7 @@ export async function requireSession(
       message: "Unauthorized"
     });
 
-  const userId = await getUserSession(sessionId);
+  const userId = await getUserFromSession(sessionId);
 
   if (!userId)
   {
