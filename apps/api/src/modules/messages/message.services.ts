@@ -184,6 +184,10 @@ export async function deleteMessage(messageId:string,userId:string){
       where id=$1  
     `,[messageId])
     await client.query("COMMIT");
+    return {
+      messageId,
+      channel_id
+    };
   }catch(err){
     client.query("ROLLBACK");
     throw err;
