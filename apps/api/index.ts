@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { registerMessageSocket } from "./src/modules/messages/message.socket";
 import cookie from "cookie";
 import { getUserFromSession } from "./src/utils/session.utils";
+import logger from "./src/utils/logger";
 
 
 dotenv.config();
@@ -41,6 +42,8 @@ io.use(async (socket,next)=>{
 registerMessageSocket(io);
 
 httpServer.listen(PORT,()=>{
-  console.log(`The Server is running at port no ${PORT}`);
+  logger.info("Server Started ",{
+    port:PORT
+  });
 });
 

@@ -1,4 +1,5 @@
 import pool from "../../config/db";
+import logger from "../../utils/logger";
 
 export async function createMessage(
   channelId: string,
@@ -43,6 +44,11 @@ export async function createMessage(
       `,
       [channelId, senderId, content]
     );
+    logger.info("Message created",{
+      userId: senderId,
+      channelId,
+      messageId:result.rows[0].id
+    })
     await client.query("COMMIT");
     return result.rows[0];
   }
@@ -168,6 +174,11 @@ export async function deleteMessage(messageId:string,userId:string){
       where server_id=$1 and user_id=$2
     `,[server_id,userId])
     if(membership.rowCount===0){
+      logger.warn("Unauthorized attempt", {
+        userId,
+        action: "delete_message",
+        messageId
+      });
       throw new Error("Unauthorized");
     }
     const role=membership.rows[0];
@@ -176,6 +187,11 @@ export async function deleteMessage(messageId:string,userId:string){
     const isModerator=role==="moderator"
 
     if(!isSender && !isOwner && !isModerator){
+      logger.warn("Unauthorized attempt", {
+        userId,
+        action: "delete_message",
+        messageId
+      });
       throw new Error("Unauthorized");
     }
     
@@ -197,12 +213,20 @@ export async function deleteMessage(messageId:string,userId:string){
       ]
     );
     await client.query("COMMIT");
+      logger.warn("Message deleted", {
+      userId,
+      messageId,
+      serverId: server_id
+    });
     return {
       messageId,
       channel_id
     };
-  }catch(err){
-    client.query("ROLLBACK");
+  }catch(err: any){
+    await client.query("ROLLBACK");
+    logger.error("Database transaction failed", {
+      error: err.message
+    });
     throw err;
   }finally{
     client.release();

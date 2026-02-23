@@ -1,9 +1,14 @@
 import { Server,Socket } from "socket.io";
 import { createMessage, deleteMessage, editMessage, markChannelRead } from "./message.services";
 import REDIS_CLIENT from "../../config/redis";
+import logger from "../../utils/logger";
 const userSocketMap=new Map<string,Set<string>>();
 export function registerMessageSocket(io:Server){
   io.on("connection",async (socket:Socket)=>{
+    logger.info("Socket connected", {
+      userId: socket.data.userId,
+      socketId: socket.id
+    });
     const userId=socket.data.userId;
     if(typeof userId!=="string"){
       socket.disconnect();
@@ -23,7 +28,7 @@ export function registerMessageSocket(io:Server){
       socket.leave(channelId);
     })
 
-    socket.on("send_message",async (data:{channelId:string,content:string,userId:string})=>{
+    socket.on("send_message",async (data:{channelId:string,content:string})=>{
       try{
         const key = `rate:${userId}`;
         const count = await REDIS_CLIENT.incr(key);
@@ -39,7 +44,7 @@ export function registerMessageSocket(io:Server){
         const message=await createMessage(
           data.channelId,
           data.content,
-          data.userId
+          userId
         );
         io.to(data.channelId).emit("receive_message",message);
       }catch(err){
@@ -87,6 +92,9 @@ export function registerMessageSocket(io:Server){
     })
 
     socket.on("disconnect",async()=>{
+      logger.info("Socket disconnected", {
+        userId: socket.data.userId
+      });
       const sockets=userSocketMap.get(userId);
       if(!sockets){
         return;

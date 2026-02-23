@@ -1,9 +1,10 @@
-import express, { type Request, type Response } from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { setUpRoutes } from "./routes";
 import { connectDB } from "./src/config/db";
 import { initRedis } from "./src/config/redis";
+import logger from "./src/utils/logger";
 
 const app=express();
 app.use(express.json());
@@ -23,5 +24,19 @@ app.get('/health',(req:Request,res:Response)=>{
     message:"I am healthy"
   });
 })
+
+app.use((err:any, req:Request, res:Response, next:NextFunction) =>
+{
+  logger.error("Unhandled error", {
+    path: req.path,
+    method: req.method,
+    error: err.message
+  });
+
+  res.status(500).json({
+    success: false,
+    message: "Internal Server Error"
+  });
+});
 
 export default app;
