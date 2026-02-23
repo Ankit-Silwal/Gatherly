@@ -25,6 +25,17 @@ export function registerMessageSocket(io:Server){
 
     socket.on("send_message",async (data:{channelId:string,content:string,userId:string})=>{
       try{
+        const key = `rate:${userId}`;
+        const count = await REDIS_CLIENT.incr(key);
+        if (count === 1)
+        {
+          await REDIS_CLIENT.expire(key, 5);
+        }
+        if (count > 10)
+        {
+          socket.emit("error_message", "Rate limit exceeded");
+          return;
+        }
         const message=await createMessage(
           data.channelId,
           data.content,
