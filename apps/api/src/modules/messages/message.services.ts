@@ -101,3 +101,49 @@ export async function getMessage(channelId:string,userId:string,cursor?:string,l
   }
 
 }
+
+export async function editMessage(messageId:string,newContent:string,userId:string) {
+ const client=await pool.connect();
+ try{
+  await pool.query("BEGIN");
+  const message = await client.query(
+      `
+      SELECT m.channel_id, m.sender_id, c.server_id
+      FROM messages m
+      JOIN channels c ON c.id = m.channel_id
+      WHERE m.id = $1
+      `,
+      [messageId]
+  );
+  if(message.rowCount===0){
+    throw new Error("Unauthorized");
+  }
+  const {sender_id,server_id}=message.rows[0];
+  if(sender_id!==userId){
+    throw new Error("Unauthorized");
+  }
+  const membership=await client.query(`
+    select 1
+    from member_servers
+    where server_id=$1 and user_id=$2
+    `,[server_id,userId])
+    if(membership.rowCount===0){
+      throw new Error("Unauthorized");
+    }
+    const updated=await client.query(`
+        UPDATE messages
+      SET content = $1,
+          updated_at = NOW(),
+          is_edited = TRUE
+      WHERE id = $2
+      RETURNING *
+    `,[newContent,messageId]);
+    await client.query("COMMIT");
+    return updated.rows[0];
+ }catch(error){
+  await client.query("ROLLBACK");
+  throw error;
+ }finally{
+  client.release();
+ }
+}
