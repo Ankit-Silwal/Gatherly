@@ -1,11 +1,11 @@
 import { Server,Socket } from "socket.io";
-import { createMessage } from "./message.services";
+import { createMessage, editMessage } from "./message.services";
 import REDIS_CLIENT from "../../config/redis";
 const userSocketMap=new Map<string,Set<string>>();
 export function registerMessageSocket(io:Server){
   io.on("connection",async (socket:Socket)=>{
     const userId=socket.data.userId;
-    if(!userId){
+    if(typeof userId!=="string"){
       socket.disconnect();
       return;
     }
@@ -43,6 +43,18 @@ export function registerMessageSocket(io:Server){
     socket.on("stop_typing",(channeId:string)=>{
       socket.to(channeId).emit("user_stop_typing",{userId});
     })
+    socket.on("edit_message",async (data:{messageId:string,content:string})=>{
+      try{
+        const updated=await editMessage(
+          data.messageId,
+          data.content,
+          userId
+        )
+        io.to(updated.channel_id).emit("message_updated",updated);
+      }catch{
+        socket.emit("error_message","Edit failed")
+      }
+    })
 
     socket.on("disconnect",async()=>{
       const sockets=userSocketMap.get(userId);
@@ -51,7 +63,7 @@ export function registerMessageSocket(io:Server){
       }
       sockets.delete(socket.id);
       if(sockets.size===0){
-        userSocketMap.delete(socket.id);
+        userSocketMap.delete(userId);
         await REDIS_CLIENT.sRem("online-users",userId);
         socket.broadcast.emit("user_offline",userId);
       }

@@ -1,6 +1,4 @@
 import pool from "../../config/db";
-import { editMessage } from "../messages/message.services";
-import type { Request, Response } from "express";
 export async function getMembers(serverId: string)
 {
   const result = await pool.query(
@@ -152,41 +150,5 @@ export async function kickMember(
   finally
   {
     client.release();
-  }
-}
-
-export async function handleEditMessage(req:Request,res:Response): Promise<Response>{
-  try{
-    const rawMessageId=req.params.messageId;
-    if(typeof rawMessageId!=="string"){
-      return res.status(400).json({
-        message:"messageId is required"
-      })
-    }
-    const messageId:string=rawMessageId;
-    const {content}=req.body;
-    const userId=req.userId;
-    if(!userId){
-      return res.status(401).json({
-        message:"Unauthorized"
-      })
-    }
-    if(!content){
-      return res.status(400).json({
-        message:"Content Required"
-      })
-    }
-    const updated=await editMessage(
-      messageId,
-      content,
-      userId
-    );
-    return res.status(200).json({
-      updated
-    })
-  }catch(err){
-    return res.status(400).json({
-      err
-    })
   }
 }
