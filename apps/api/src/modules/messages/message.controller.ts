@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { createMessage, editMessage, getMessage } from "./message.services";
+import { createMessage, deleteMessage, editMessage, getMessage } from "./message.services";
 
 type MessageRouteParams = {
   channelId: string;
@@ -89,5 +89,23 @@ export async function handleEditMessage(req: Request, res: Response): Promise<Re
     return res.status(400).json({
       err
     });
+  }
+}
+
+export async function handleDeleteMessage(req:Request,res:Response){
+  try{
+    const {messageId}=req.params;
+    const userId=req.userId;
+    const result=await deleteMessage(
+      messageId as string,
+      userId as string
+    )
+    return res.status(200).json({
+      result
+    })
+  }catch(err:any){
+    return res.status(400).json({
+      message:err.message
+    })
   }
 }

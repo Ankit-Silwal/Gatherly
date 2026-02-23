@@ -147,3 +147,47 @@ export async function editMessage(messageId:string,newContent:string,userId:stri
   client.release();
  }
 }
+
+export async function deleteMessage(messageId:string,userId:string){
+  const client=await pool.connect()
+  try{
+    await client.query("BEGIN");
+    const message=await client.query(`
+      select m.channel_id,m.sender_id,c.server_id
+      from messages m
+      join channels c on c.id=m.channel_id
+      where m.id=$1  
+    `,[messageId])
+    if(message.rowCount===0){
+      throw new Error("The message wasn't found sir")
+    }
+    const {channel_id,sender_id,server_id}=message.rows[0];
+    const membership=await client.query(`
+      select role 
+      from server_members
+      where server_id=$1 and user_id=$2
+    `,[server_id,userId])
+    if(membership.rowCount===0){
+      throw new Error("Unauthorized");
+    }
+    const role=membership.rows[0];
+    const isSender=sender_id===userId;
+    const isOwner=role==="owner";
+    const isModerator=role==="moderator"
+
+    if(!isSender && !isOwner && !isModerator){
+      throw new Error("Unauthorized");
+    }
+    
+    await client.query(`
+      delete from messages
+      where id=$1  
+    `,[messageId])
+    await client.query("COMMIT");
+  }catch(err){
+    client.query("ROLLBACK");
+    throw err;
+  }finally{
+    client.release();
+  }
+}
