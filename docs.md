@@ -46,6 +46,7 @@ From `routes.ts`:
 - `/server` → server routes
 - `/servers/:serverId` → member routes
 - `/server/:serverId/channels` → channel routes
+- `/server/:serverId/channels/:channelId/messages` → message routes
 
 ---
 
@@ -153,9 +154,45 @@ All read `req.userId` + `req.params.serverId`, fetch role from `server_members`,
 |---|---|---|---|
 | POST | `/` | `checkServerAdminOrModerator` | Create a channel in server |
 
+## Messages (`/server/:serverId/channels/:channelId/messages`)
+
+| Method | Path | Auth required | Description |
+|---|---|---|---|
+| POST | `/` | Yes (`requireSession`) | Create message in channel |
+| GET | `/` | Yes (`requireSession`) | List channel messages (cursor + limit supported) |
+| PATCH | `/:messageId` | Yes (`requireSession`) | Edit own message |
+| DELETE | `/:messageId` | Yes (`requireSession`) | Delete message (sender/admin/moderator/owner logic via service) |
+
 ---
 
-## 7) Database Interaction Areas
+## 7) Real-time Messaging (Socket.IO)
+
+`message.socket.ts` currently handles:
+
+- Presence tracking with Redis + in-memory socket map
+  - emits `user-online` and `user_offline`
+- Channel room operations
+  - `join_channel`, `leave_channel`
+- Message events
+  - `send_message` → emits `receive_message`
+  - `edit_message` → emits `message_updated`
+  - `delete_message` → emits `message_deleted`
+- Typing indicators
+  - `start_typing` → emits `user_typing`
+  - `stop_typing` → emits `user_stop_typing`
+- Read receipts
+  - `mark_read` updates `channel_reads`
+
+### Send-message rate limiting
+
+- Redis key format: `rate:<userId>`
+- Counter increments with `INCR`
+- TTL set to 5 seconds on first increment
+- If count exceeds 10 in window, socket emits `Rate limit exceeded`
+
+---
+
+## 8) Database Interaction Areas
 
 Current queries touch these logical tables:
 
@@ -163,12 +200,15 @@ Current queries touch these logical tables:
 - `servers`
 - `server_members`
 - `channels`
+- `messages`
+- `channel_reads`
+- `server_audit_logs`
 
 No Prisma or ORM is used currently; queries are written directly with `pg`.
 
 ---
 
-## 8) Frontend (`apps/web`) Current State
+## 9) Frontend (`apps/web`) Current State
 
 - Next.js app scaffold is present
 - Home page is default starter-style page
@@ -184,7 +224,7 @@ Scripts:
 
 ---
 
-## 9) Shared UI Package (`packages/ui`)
+## 10) Shared UI Package (`packages/ui`)
 
 Current exported components:
 
@@ -196,18 +236,21 @@ Current exported components:
 
 ---
 
-## 10) Recent Fixes Applied
+## 11) Recent Fixes Applied
 
-- Fixed `apps/api/src/modules/channel/channel.controller.ts` type errors by:
-  - importing Express `Request/Response` types
-  - normalizing `serverId` param to string
-  - removing invalid direct call to role middleware inside controller
-
-Channel role check is now correctly handled at route level in `channel.routes.ts`.
+- Fixed session/auth typing and import issues in middleware and session utilities.
+- Moved `handleEditMessage` to `messages/message.controller.ts` (controller layer), while keeping DB logic in `messages/message.services.ts`.
+- Fixed socket handler compile/runtime issues:
+  - corrected map value usage for multiple sockets per user
+  - fixed broken event handler structure/braces
+  - fixed disconnect cleanup key (`userId` instead of `socket.id`)
+- Added socket send-message rate limiting via Redis (`INCR` + `EXPIRE`).
+- Updated message delete flow to return payload (`messageId`, `channel_id`) for socket broadcasts.
+- Added `server_audit_logs` insert for `message_delete` actions.
 
 ---
 
-## 11) Current Status Snapshot
+## 12) Current Status Snapshot
 
 What is working conceptually now:
 
@@ -216,6 +259,8 @@ What is working conceptually now:
 - Server creation/join/list/details/delete
 - Member listing/role-change/kick flows
 - Channel creation endpoint with role guard
+- Message create/list/edit/delete endpoints
+- Real-time messaging events (send/edit/delete/typing/presence/read)
 
 What is still early-stage:
 
@@ -225,7 +270,7 @@ What is still early-stage:
 
 ---
 
-## 12) Quick Start (current)
+## 13) Quick Start (current)
 
 From repo root:
 

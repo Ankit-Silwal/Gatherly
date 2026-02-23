@@ -183,6 +183,19 @@ export async function deleteMessage(messageId:string,userId:string){
       delete from messages
       where id=$1  
     `,[messageId])
+    await client.query(
+      `
+      INSERT INTO server_audit_logs
+      (server_id, action_type, performed_by, target_id, metadata)
+      VALUES ($1, 'message_delete', $2, $3, $4)
+      `,
+      [
+        server_id,
+        userId,
+        messageId,
+        JSON.stringify({ channelId: channel_id })
+      ]
+    );
     await client.query("COMMIT");
     return {
       messageId,
