@@ -13,8 +13,44 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-
+import { useRouter } from "next/router"
+import { useState } from "react"
+import api from "@/lib/api"
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  const [email,setEmail]=useState<string>("");
+  const [password,setPassword]=useState<string>("");
+  const [conformPassword,setConformPassword]=useState<string>("");
+  const [username,setUsername]=useState<string>("");
+  const [error,setError]=useState<string>("");
+  const [success,setSuccess]=useState<string>("");
+  // const router=useRouter();
+  const handleRegister=async (e:React.FormEvent<HTMLFormElement>)=>{
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if(password!=conformPassword){
+      setError("Password didn't match sir");
+      return;
+    }
+    try{
+      const res=await api.post('/auth/register',{
+        username,
+        email,
+        password,
+        conformPassword
+      })
+
+      if(res.status===200){
+        setSuccess("Registration Successful");
+        console.log("It worked my nigga");
+      }else{
+        setError(res.data.message);
+      }
+    }catch(err){
+      console.log("Registration Error:",err);
+      setError(`Unexpected Error ${err}`);
+    }
+  }
   return (
     <Card {...props}>
       <CardHeader>
@@ -24,11 +60,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form onSubmit={handleRegister}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="name">Full Name</FieldLabel>
-              <Input id="name" type="text" placeholder="John Doe" required />
+              <FieldLabel htmlFor="name">Username</FieldLabel>
+              <Input id="name" type="text" placeholder="johndoe" required onChange={(e)=>{
+                setUsername(e.target.value);
+              }}/>
             </Field>
             <Field>
               <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -37,6 +75,9 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 type="email"
                 placeholder="m@example.com"
                 required
+                onChange={(e)=>{
+                  setEmail(e.target.value);
+                }}
               />
               <FieldDescription>
                 We&apos;ll use this to contact you. We will not share your email
@@ -45,7 +86,10 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
             </Field>
             <Field>
               <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Input id="password" type="password" required />
+              <Input id="password" type="password" required 
+              onChange={(e)=>{
+                setPassword(e.target.value);
+              }}/>
               <FieldDescription>
                 Must be at least 8 characters long.
               </FieldDescription>
@@ -54,17 +98,19 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
               <FieldLabel htmlFor="confirm-password">
                 Confirm Password
               </FieldLabel>
-              <Input id="confirm-password" type="password" required />
+              <Input id="confirm-password" type="password" required 
+              onChange={(e)=>{
+                setConformPassword(e.target.value);
+              }}/>
               <FieldDescription>Please confirm your password.</FieldDescription>
             </Field>
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+            {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
             <FieldGroup>
               <Field>
                 <Button type="submit">Create Account</Button>
-                <Button variant="outline" type="button">
-                  Sign up with Google
-                </Button>
                 <FieldDescription className="px-6 text-center">
-                  Already have an account? <a href="#" className="cursor-pointer underline hover:text-blue-600">Sign in</a>
+                  Already have an account? <a className="cursor-pointer underline hover:text-blue-600">Sign in</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>

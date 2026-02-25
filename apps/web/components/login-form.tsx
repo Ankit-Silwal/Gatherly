@@ -54,8 +54,7 @@ export function LoginForm({
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <a
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
+                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline cursor-pointer">
                     Forgot your password?
                   </a>
                 </div>
@@ -64,10 +63,10 @@ export function LoginForm({
                 }}/>
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button type="submit" className="cursor-pointer">Login</Button>
                 
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a onClick={()=>{
+                  Don&apos;t have an account? <a className="cursor-pointer" onClick={()=>{
                     router.push('/signup')
                   }}>Sign up</a>
                 </FieldDescription>
