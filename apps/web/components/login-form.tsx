@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { useState } from "react";
 import { useRouter } from "next/navigation"
+import api from "@/lib/api"
+import type { AxiosError } from "axios";
 export function LoginForm({
   className,
   ...props
@@ -23,6 +25,32 @@ export function LoginForm({
   const router=useRouter();
   const [email,setEmail]=useState<string>("");
   const [password,setPassword]=useState<string>("");
+  const [error,setError]=useState<string>("");
+  const [success,setSuccess]=useState<string>("");
+  const handleLogin=async (e:React.FormEvent<HTMLFormElement>)=>{
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    try{
+      const res=await api.post('/auth/login',{
+        email,
+        password
+      })
+      if(res.status===200){
+        setSuccess("Login successful");
+        // You can redirect here if needed
+      }else{
+        setError(res.data.message);
+      }
+    }catch(err){
+      const error = err as AxiosError<{ message?: string }>;
+      if (error.response && error.response.data && error.response.data.message) {
+        setError(error.response.data.message);
+      } else {
+        setError("Login failed");
+      }
+    }
+  }
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -33,10 +61,7 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={(e)=>{
-            e.preventDefault();
-            console.log(email,password);
-          }}>
+          <form onSubmit={handleLogin}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -62,6 +87,8 @@ export function LoginForm({
                   setPassword(e.target.value)
                 }}/>
               </Field>
+              {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+              {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
               <Field>
                 <Button type="submit" className="cursor-pointer">Login</Button>
                 
