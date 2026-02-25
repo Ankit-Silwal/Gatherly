@@ -39,7 +39,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         password,
         conformPassword
       })
-
+      console.log("Registration response:", res);
       if(res.status===200){
         setSuccess("Registration Successful");
         console.log("It worked my nigga");
@@ -47,8 +47,13 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         setError(res.data.message);
       }
     }catch(err){
-      console.log("Registration Error:",err);
-      setError(`Unexpected Error ${err}`);
+      if (err.response) {
+        console.log("Registration Error Response:", err.response);
+        setError(err.response.data?.message || `Unexpected Error ${err}`);
+      } else {
+        console.log("Registration Error:", err);
+        setError(`Unexpected Error ${err}`);
+      }
     }
   }
   return (

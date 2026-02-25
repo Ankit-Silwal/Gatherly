@@ -9,7 +9,7 @@ import logger from "./src/utils/logger";
 
 
 dotenv.config();
-const PORT=process.env.PORT;
+const PORT=process.env.PORT || 8000;
 const httpServer=createServer(app);
 
 export const io=new Server(httpServer,{

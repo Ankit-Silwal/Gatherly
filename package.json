@@ -1,9 +1,9 @@
 {
-  "name": "Gatherly",
+  "name": "gatherly",
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "bun run --workspaces --parallel --if-present dev",
+    // "dev": "bun run --workspaces --parallel --if-present dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
