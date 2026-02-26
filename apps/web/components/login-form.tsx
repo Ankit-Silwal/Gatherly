@@ -38,7 +38,7 @@ export function LoginForm({
       })
       if(res.status===200){
         setSuccess("Login successful");
-        // You can redirect here if needed
+        router.push('/dashboard')
       }else{
         setError(res.data.message);
       }
