@@ -16,18 +16,22 @@ export default function AppLayout({
       try{
         await api.get('/auth/me');
         setauthorized(true);
+        console.log("YO")
       }catch{
         router.replace('/login')
       }finally{
         setLoading(false);
       }
-      checkSession();
     }
+    checkSession();
   },[router]);
+ 
   if(loading){
-    <div className="h-screen flex items-center justify-center">
+    return(
+      <div className="h-screen flex items-center justify-center">
       Checking session...
-    </div>
+      </div>
+    )
   };
   if(!authorized){
     return null;
