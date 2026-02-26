@@ -17,7 +17,7 @@ export default function Page()
   {
     if (!email )
     {
-      router.replace("/auth/signup")
+      router.replace("/signup")
       return
     }
   }, [email])
@@ -46,7 +46,7 @@ export default function Page()
         
         setTimeout(() =>
         {
-          router.push("/auth/login")
+          router.push("/login")
         }, 1500)
       }
     }

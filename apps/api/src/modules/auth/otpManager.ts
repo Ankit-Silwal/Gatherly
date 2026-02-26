@@ -1,6 +1,7 @@
 import REDIS_CLIENT from "../../config/redis.js";
 import { generateOtp } from "../../utils/generateOtp.js";
 import pool from "../../config/db.js";
+import { hashOtp } from "../../utils/hashOtp.js";
 
 const OTP_TTL = 300;
 
@@ -11,8 +12,12 @@ type ApiResponse = {
 
 export async function generateAndStoreOtp(userId: string): Promise<string> {
   const otp = generateOtp();
-  const key = `verify:otp:${userId}`;
-  await REDIS_CLIENT.set(key, otp, { EX: OTP_TTL });
+  const hashedOtp=hashOtp(otp);
+  const key=`verify:otp:${userId}`;
+  await REDIS_CLIENT.set(key,JSON.stringify({
+    otp:hashedOtp,
+    attempts:0
+  }),{EX:OTP_TTL});
   return otp;
 }
 
@@ -23,22 +28,51 @@ export async function generateAndStoreForgotPasswordOtp(userId: string): Promise
   return otp;
 }
 
-export async function verifyAndConsumeOtp(userId: string, submittedOtp: string): Promise<ApiResponse> {
+export async function verifyAndConsumeOtp(
+  userId: string,
+  submittedOtp: string
+): Promise<ApiResponse>
+{
   const key = `verify:otp:${userId}`;
+
   const stored = await REDIS_CLIENT.get(key);
-  if (!stored) {
+
+  if (!stored)
+  {
     return {
       success: false,
       message: "OTP expired"
     };
   }
-  if (stored !== submittedOtp) {
+
+  const parsed = JSON.parse(stored);
+  const hashedSubmitted = hashOtp(submittedOtp);
+  if (parsed.otp !== hashedSubmitted)
+  {
+    parsed.attempts += 1;
+
+    if (parsed.attempts >= 5)
+    {
+      await REDIS_CLIENT.del(key);
+
+      return {
+        success: false,
+        message: "Too many failed attempts. OTP invalidated."
+      };
+    }
+
+    await REDIS_CLIENT.set(
+      key,
+      JSON.stringify(parsed),
+      { EX: OTP_TTL }
+    );
     return {
       success: false,
       message: "The OTP didn't match"
     };
   }
   await REDIS_CLIENT.del(key);
+
   const user = await pool.query(
     `UPDATE users
      SET is_verified = TRUE
@@ -46,12 +80,15 @@ export async function verifyAndConsumeOtp(userId: string, submittedOtp: string):
      RETURNING id, email, is_verified`,
     [userId]
   );
-  if (user.rowCount === 0) {
+
+  if (user.rowCount === 0)
+  {
     return {
       success: false,
       message: "The required user doesn't exist"
     };
   }
+
   return {
     success: true,
     message: "The OTP was verified"

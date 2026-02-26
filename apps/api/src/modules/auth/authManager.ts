@@ -21,7 +21,7 @@ import {
   getAllSession,
   removeSpecificSession,
 } from "./sessionManager.js";
-
+import {randomBytes} from "node:crypto"
 declare global {
   namespace Express {
     interface Request {
@@ -123,11 +123,12 @@ export const registerUsers = async (
 
     const otp = await generateAndStoreOtp(result.rows[0].id);
     await sendRegisterMail({ to: result.rows[0].email, otp });
-
+    const verificationToken=randomBytes(32).toString("hex")
+    await REDIS_CLIENT.set(`verify:token:${verificationToken}`,result.rows[0].id,{EX:300});
     return res.status(200).json({
       success: true,
       message: "Registration successful. Please verify your email.",
-      data: result.rows[0],
+      token:verificationToken,
     });
   } catch (err: any) {
     console.error("Registration error:", err);
@@ -141,40 +142,48 @@ export const registerUsers = async (
 export async function verifyUser(
   req: Request,
   res: Response
-): Promise<Response> {
-  const { email, otp } = req.body as { email?: string; otp?: string };
-  if (!email || !otp) {
+): Promise<Response>
+{
+  const { token, otp } = req.body as {
+    token?: string;
+    otp?: string;
+  };
+
+  if (!token || !otp)
+  {
     return res.status(400).json({
       success: false,
-      message: "Please provide both email and the otp",
+      message: "Token and OTP are required"
     });
   }
-  const user = await pool.query(
-    `SELECT id, email FROM users WHERE email = $1`,
-    [email]
-  );
-  if (user.rows.length === 0) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-  }
-  const response = await verifyAndConsumeOtp(user.rows[0].id, otp);
-  if (response.success) {
-    return res.status(200).json({
-      success: true,
-      message: "The Otp was verified",
-    });
-  }
-  if (!response.success) {
+
+  const userId = await REDIS_CLIENT.get(`verify:token:${token}`);
+
+  if (!userId)
+  {
     return res.status(400).json({
       success: false,
-      message: response.message,
+      message: "Invalid or expired verification token"
     });
   }
-  return res.status(400).json({
-    success: false,
-    message: "Unknown error",
+
+  // Verify OTP using userId
+  const response = await verifyAndConsumeOtp(userId, otp);
+
+  if (!response.success)
+  {
+    return res.status(400).json({
+      success: false,
+      message: response.message
+    });
+  }
+
+  // OTP verified → delete verification token
+  await REDIS_CLIENT.del(`verify:token:${token}`);
+
+  return res.status(200).json({
+    success: true,
+    message: "Email verified successfully"
   });
 }
 

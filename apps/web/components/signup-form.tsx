@@ -1,3 +1,4 @@
+"use client"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -13,7 +14,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import api from "@/lib/api"
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
@@ -23,9 +24,11 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const [username,setUsername]=useState<string>("");
   const [error,setError]=useState<string>("");
   const [success,setSuccess]=useState<string>("");
-  // const router=useRouter();
+  const [loading,setLoading]=useState<boolean>(false);
+  const router=useRouter();
   const handleRegister=async (e:React.FormEvent<HTMLFormElement>)=>{
     e.preventDefault();
+    if(loading) return;
     setError("");
     setSuccess("");
     if(password!=conformPassword){
@@ -33,6 +36,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       return;
     }
     try{
+      setLoading(true);
       const res=await api.post('/auth/register',{
         username,
         email,
@@ -41,7 +45,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       })
       if(res.status===200){
         setSuccess("Registration Successful");
-        console.log("It worked my nigga");
+        router.push(`/signup/verify-otp?email=${encodeURIComponent(email)}`)
       }else{
         setError(res.data.message);
       }
@@ -52,6 +56,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         console.log("Registration Error:", err);
         setError(`Unexpected Error ${err}`);
       }
+    }finally{
+      setLoading(false);
     }
   }
   return (
