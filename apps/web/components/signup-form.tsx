@@ -45,7 +45,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       })
       if(res.status===200){
         setSuccess("Registration Successful");
-        router.push(`/signup/verify-otp?email=${encodeURIComponent(email)}`)
+        router.push(`/signup/verify-otp?token=${encodeURIComponent(res.data.token)}`)
       }else{
         setError(res.data.message);
       }

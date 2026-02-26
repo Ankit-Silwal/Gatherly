@@ -12,18 +12,18 @@ export default function Page()
   const [loading, setLoading] = useState<boolean>(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const email = searchParams.get("email")
+  const token = searchParams.get("token")
   useEffect(() =>
   {
-    if (!email )
+    if (!token )
     {
       router.replace("/signup")
       return
     }
-  }, [email])
+  }, [token])
   useEffect(() =>
   {
-    if (otp.length === 6 && email && !loading)
+    if (otp.length === 6 && token && !loading)
     {
       verifyOtp()
     }
@@ -36,7 +36,7 @@ export default function Page()
       setError("")
       setSuccess("")
       const res = await api.post("/auth/verify", {
-        email,
+        token,
         otp
       })
 
