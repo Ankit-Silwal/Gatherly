@@ -59,25 +59,37 @@ export async function joinServer(inviteCode:string,userId:string){
   }
 }
 
-export async function getAllServers(userId:string){
-  const client=await pool.connect();
-  try{
-    client.query("BEGIN");
-    const result=await client.query(`
+export async function getAllServers(userId: string)
+{
+  const client = await pool.connect();
+
+  try
+  {
+    await client.query("BEGIN");
+
+    const result = await client.query(
+      `
       SELECT 
-      s.id,
-      s.name,
+        s.id,
+        s.name
       FROM server_members sm
       JOIN servers s ON sm.server_id = s.id
       WHERE sm.user_id = $1
-      ORDER BY s.created_at DESC;
-      `,[userId])
-    await client.query("COMMIT")
+      ORDER BY s.created_at DESC
+      `,
+      [userId]
+    );
+
+    await client.query("COMMIT");
     return result.rows;
-  }catch(error){
+  }
+  catch (error)
+  {
     await client.query("ROLLBACK");
     throw error;
-  }finally{
+  }
+  finally
+  {
     client.release();
   }
 }
