@@ -1,10 +1,60 @@
 "use client";
 
+import { useEffect,useState } from "react";
+import api from "@/lib/api";
+import { useParams } from "next/navigation";
+
+type Server={
+  id:string,
+  name:string
+}
+
+type Channel={
+  id:string,
+  name:string
+}
+
 export default function ChannelPage()
 {
-  const servers = ["Dev Hub", "Study Group", "Startup Team"];
+  const params=useParams();
+  const channelId=params.channelId as string;
+  const [servers,setServers]=useState<Server[]>([]);
+  const [loadingServer,setLoadingServer]=useState(true);
+  const [selectedServer,setSelectedServer]=useState<string|null>(null);
+  const [channels,setChannels]=useState<Channel[]>([]);
+  const [loadingChannels,setLoadingChannels]=useState<boolean>(false);
+  useEffect(()=>{
+    async function fetchServers(){
+      try{
+        const res=await api.get('/server');
+        setServers(res.data);
+        if(res.data.length>0){
+          setSelectedServer(res.data[0].id);
+        }
+      }catch(err){
+        console.log("Error fetching the servers");
+      }finally{
+        setLoadingServer(false);
+      }
+    }
+    fetchServers();
+  },[])
 
-  const channels = ["general", "backend", "frontend", "random"];
+  useEffect(()=>{
+    if(!selectedServer) return;
+    async function fetchChannel(){ 
+      setLoadingChannels(true);
+      try{
+        const res=await api.get(`/servers/${selectedServer}/channels`)
+        setChannels(res.data);
+      }catch{
+        console.error("Failed to fetch the channels")
+      }finally{
+        setLoadingChannels(false);
+      }
+    }
+    fetchChannel();
+  },[selectedServer]);
 
   const messages = [
     {
@@ -43,23 +93,27 @@ export default function ChannelPage()
             key={i}
             className="w-12 h-12 bg-zinc-700 rounded-xl flex items-center justify-center text-sm font-semibold hover:bg-indigo-600 cursor-pointer transition"
           >
-            {server[0]}
+            {server.name[0]}
           </div>
         ))}
       </div>
 
       {/* Channels Sidebar */}
       <div className="w-60 bg-zinc-800 p-4">
-        <h2 className="text-lg font-semibold mb-4">Dev Hub</h2>
+      <h2 className="text-lg font-semibold mb-4">
+        {selectedServer ? "Channels" : "Select Server"}
+      </h2>
 
-        {channels.map((channel, i) => (
-          <div
-            key={i}
-            className="px-3 py-2 rounded-md hover:bg-zinc-700 cursor-pointer text-zinc-300"
-          >
-            # {channel}
-          </div>
-        ))}
+      {loadingChannels && <div>Loading...</div>}
+
+      {channels.map((channel) => (
+      <div
+        key={channel.id}
+        className="px-3 py-2 rounded-md hover:bg-zinc-700 cursor-pointer text-zinc-300"
+      >
+        # {channel.name}
+      </div>
+      ))}
       </div>
 
       {/* Chat Section */}
