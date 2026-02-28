@@ -7,14 +7,15 @@ import {
 	handleRenameChannel,
 	handleDeleteChannel
 } from "./channel.controller";
+import { requireSession } from "../../middlewares/authSession";
 
 const router = Router();
 
-router.post('/:serverId', checkServerAdminOrModerator, handleCreateChannel);
+router.post('/:serverId/channels', checkServerAdminOrModerator, handleCreateChannel);
 
-router.get('/:serverId', handleGetChannels);
+router.get('/:serverId/channels',requireSession, handleGetChannels);
 
-router.patch('/:serverId/:channelId', checkServerAdminOrModerator, handleRenameChannel);
+router.patch('/:serverId/:channelId/rename', checkServerAdminOrModerator, handleRenameChannel);
 
 router.delete('/:serverId/:channelId', checkServerAdminOrModerator, handleDeleteChannel);
 

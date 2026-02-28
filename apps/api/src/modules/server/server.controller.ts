@@ -14,7 +14,7 @@ export async function handleCreateServer(req: Request, res: Response) {
 
     if (!name) {
       return res.status(400).json({
-        message: "Server name is required",
+        message: "Server name in backend(name) is required",
       });
     }
 

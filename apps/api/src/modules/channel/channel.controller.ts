@@ -49,7 +49,7 @@ export async function handleGetChannels(
   try
   {
     const { serverId } = req.params;
-    const userId = req.userId!;
+    const userId = req.userId as string;
 
     const channels = await getChannels(serverId, userId);
 

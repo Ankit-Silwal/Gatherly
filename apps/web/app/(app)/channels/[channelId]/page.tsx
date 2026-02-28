@@ -35,6 +35,12 @@ export default function ChannelPage()
   const [loadingServers, setLoadingServers] = useState(true);
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [showCreateModal,setShowCreateModal]=useState<boolean>(false);
+  const [showJoinModal,setShowJoinModal]=useState<boolean>(false);
+  const [newServerName,setNewServerName]=useState<string>("");
+  const [inviteCode,setInviteCode]=useState<string>("");
+  const [createdInviteCode,setCreatedInviteCode]=useState<string|null>(null);
+
 
   useEffect(() =>
   {
@@ -73,7 +79,7 @@ export default function ChannelPage()
 
       try
       {
-        const res = await api.get(`/servers/${selectedServer}/channels`);
+        const res = await api.get(`/server/${selectedServer}/channels`);
         setChannels(res.data);
       }
       catch
@@ -115,6 +121,26 @@ export default function ChannelPage()
     fetchMessages();
   }, [channelId]);
 
+  async function handleCreateServer(){
+
+    if(!newServerName.trim()) return;
+    try{
+      const res=await api.post('/server/create',{
+        name:newServerName
+      });
+      setShowCreateModal(false);
+      setNewServerName("");
+      const updated=await api.get('/server');
+      setServers(updated.data.servers);
+      if(updated.data.server.length>0){
+        setSelectedServer(updated.data.servers[0].id);
+      }
+      setCreatedInviteCode(res.data.server.invite_code);
+    }catch{
+      console.error("Failed to create server sir");
+    }
+  }
+
   return (
     <div className="h-screen flex bg-zinc-900 text-white">
 
@@ -136,6 +162,23 @@ export default function ChannelPage()
           </div>
         ))}
       </div>
+      <div className="mt-auto flex flex-col gap-3">
+
+  <div
+    onClick={() => setShowCreateModal(true)}
+    className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-green-500 transition"
+  >
+    +
+  </div>
+
+  <div
+    onClick={() => setShowJoinModal(true)}
+    className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-500 transition"
+  >
+    J
+  </div>
+
+</div>
 
       {/* Channels Sidebar */}
       <div className="w-60 bg-zinc-800 p-4">
@@ -203,7 +246,67 @@ export default function ChannelPage()
           />
         </div>
       </div>
+      {/* Create Server Modal */}
+{showCreateModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+    <div className="bg-zinc-800 p-6 rounded-lg w-80 space-y-4">
+      <h2 className="text-lg font-semibold">Create Server</h2>
+      <input
+        type="text"
+        placeholder="Server name"
+        value={newServerName}
+        onChange={(e) => setNewServerName(e.target.value)}
+        className="w-full bg-zinc-700 px-3 py-2 rounded-md outline-none"
+      />
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className="px-3 py-1 bg-zinc-600 rounded-md"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleCreateServer}
+          className="px-3 py-1 bg-green-600 rounded-md"
+        >
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* Join Server Modal */}
+{showJoinModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+    <div className="bg-zinc-800 p-6 rounded-lg w-80 space-y-4">
+      <h2 className="text-lg font-semibold">Join Server</h2>
+      <input
+        type="text"
+        placeholder="Invite Code"
+        value={inviteCode}
+        onChange={(e) => setInviteCode(e.target.value)}
+        className="w-full bg-zinc-700 px-3 py-2 rounded-md outline-none"
+      />
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setShowJoinModal(false)}
+          className="px-3 py-1 bg-zinc-600 rounded-md"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleJoinServer}
+          className="px-3 py-1 bg-blue-600 rounded-md"
+        >
+          Join
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
     </div>
+    
   );
 }

@@ -9,6 +9,6 @@ export const setUpRoutes = (app: Application) => {
 	app.use("/auth", authRoutes);
   app.use("/server",serverRoutes);
   app.use("/servers/:serverId",memberRoutes);
-  app.use("/server/:serverId/channels",channelRoutes);
+  app.use("/server",channelRoutes);
   app.use("/server/:serverId/channels/:channelId/messages",messageRouter);
 };

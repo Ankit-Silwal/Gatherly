@@ -76,7 +76,7 @@ export async function getChannels(
     SELECT *
     FROM channels
     WHERE server_id = $1
-    ORDER BY position ASC, created_at ASC
+    ORDER BY created_at ASC
     `,
     [serverId]
   );
