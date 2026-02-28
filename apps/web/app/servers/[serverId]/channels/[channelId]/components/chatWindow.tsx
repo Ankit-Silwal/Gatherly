@@ -1,33 +1,42 @@
 "use client";
+import api from "@/lib/api";
+import { useChatStore } from "@/store/useChatStore";
 import { useState } from "react";
 type Message =
-{
-  id: string;
-  content: string;
-  sender_id: string;
-  created_at: string;
-};
+  {
+    id: string;
+    content: string;
+    sender_id: string;
+    created_at: string;
+  };
 
 type Props =
-{
-  messages: Message[];
-  channelId: string;
-  loading: boolean;
-};
+  {
+    messages: Message[];
+    channelId: string;
+    serverId: string;
+    loading: boolean;
+  };
 
 export default function ChatWindow({
   messages,
   channelId,
+  serverId,
   loading
-}: Props)
-{
-  const [input,setInput]=useState<string>("");
-
-  function handleSend(){
-    if(!input.trim()) return;
-
-    console.log("Message to send:",input);//Need to do it
-    setInput("");
+}: Props) {
+  const addMessage = useChatStore((state) => state.addMessage);
+  const [input, setInput] = useState<string>("");
+  async function handleSend() {
+    if (!input.trim()) return;
+    try {
+      const res = await api.post(`/server/${serverId}/channels/${channelId}/messages`, {
+        content: input
+      });
+      addMessage(res.data)
+      setInput("");
+    } catch (err) {
+      console.error("send failed", err);
+    }
   }
   return (
     <div className="flex flex-col h-full w-full">
@@ -70,14 +79,14 @@ export default function ChatWindow({
 
         <input
           type="text"
-          value={input??""}
+          value={input ?? ""}
           placeholder="Type a message..."
           className="flex-1 px-4 py-2 rounded-md bg-zinc-800 text-white outline-none"
-          onChange={(e)=>{
+          onChange={(e) => {
             setInput(e.target.value)
-          }}        
-          onKeyDown={(e)=>{
-            if(e.key==="Enter"){
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
               handleSend();
             }
           }}

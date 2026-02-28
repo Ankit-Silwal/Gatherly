@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { io } from "socket.io-client";
 import { useChatStore } from "@/store/useChatStore";
 
 import ServerSidebar from "./components/serverSidebar";
 import ChannelSidebar from "./components/channelSidebar";
 import ChatWindow from "./components/chatWindow";
 
-export default function ChannelPage()
-{
+export default function ChannelPage() {
   const params = useParams();
   const router = useRouter();
 
@@ -28,19 +28,15 @@ export default function ChannelPage()
 
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
-
+  const addMessage = useChatStore((state) => state.addMessage)
   // Fetch Servers
-  useEffect(() =>
-  {
-    async function fetchServers()
-    {
-      try
-      {
+  useEffect(() => {
+    async function fetchServers() {
+      try {
         const res = await api.get("/server");
         setServers(res.data.servers);
       }
-      catch (err)
-      {
+      catch (err) {
         console.error("Failed to fetch servers", err);
       }
     }
@@ -48,26 +44,41 @@ export default function ChannelPage()
     fetchServers();
   }, []);
 
+  useEffect(() => {
+    if (!channelId) return;
+
+    const socket = io("http://localhost:8000", {
+      withCredentials: true
+    });
+
+    socket.emit("join_channel", channelId);
+
+    socket.on("receive_message", (message) => {
+      addMessage(message);
+    });
+
+    return () => {
+      socket.emit("leave_channel", channelId);
+      socket.disconnect();
+    };
+
+  }, [channelId, addMessage]);
+
   // Fetch Channels
-  useEffect(() =>
-  {
+  useEffect(() => {
     if (!serverId) return;
 
-    async function fetchChannels()
-    {
+    async function fetchChannels() {
       setLoadingChannels(true);
 
-      try
-      {
+      try {
         const res = await api.get(`/server/${serverId}/channels`);
         setChannels(res.data);
       }
-      catch (err)
-      {
+      catch (err) {
         console.error("Failed to fetch channels", err);
       }
-      finally
-      {
+      finally {
         setLoadingChannels(false);
       }
     }
@@ -76,27 +87,22 @@ export default function ChannelPage()
   }, [serverId]);
 
   // Fetch Messages
-  useEffect(() =>
-  {
+  useEffect(() => {
     if (!serverId || !channelId) return;
 
-    async function fetchMessages()
-    {
+    async function fetchMessages() {
       setLoadingMessages(true);
 
-      try
-      {
+      try {
         const res = await api.get(
           `/server/${serverId}/channels/${channelId}/messages`
         );
         setMessages(res.data);
       }
-      catch (err)
-      {
+      catch (err) {
         console.error("Failed to fetch messages", err);
       }
-      finally
-      {
+      finally {
         setLoadingMessages(false);
       }
     }
@@ -113,8 +119,8 @@ export default function ChannelPage()
         onSelect={(id) =>
           router.push(`/servers/${id}/channels/${channelId}`)
         }
-        onCreate={() => {}}
-        onJoin={() => {}}
+        onCreate={() => { }}
+        onJoin={() => { }}
       />
 
       <ChannelSidebar
@@ -126,6 +132,7 @@ export default function ChannelPage()
       <ChatWindow
         messages={messages}
         channelId={channelId}
+        serverId={serverId}
         loading={loadingMessages}
       />
 
