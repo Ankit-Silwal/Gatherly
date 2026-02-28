@@ -42,7 +42,7 @@ export async function handleJoinServer(req: Request, res: Response) {
 
     if (!inviteCode) {
       return res.status(400).json({
-        message: "Provide the required invite code",
+        message: "Provide the required inviteCode",
       });
     }
 

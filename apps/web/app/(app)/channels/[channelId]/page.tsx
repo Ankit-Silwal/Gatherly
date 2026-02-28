@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
+import axios from "axios";
 
 type Server = {
   id: string;
@@ -35,13 +36,16 @@ export default function ChannelPage()
   const [loadingServers, setLoadingServers] = useState(true);
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
-  const [showCreateModal,setShowCreateModal]=useState<boolean>(false);
-  const [showJoinModal,setShowJoinModal]=useState<boolean>(false);
-  const [newServerName,setNewServerName]=useState<string>("");
-  const [inviteCode,setInviteCode]=useState<string>("");
-  const [createdInviteCode,setCreatedInviteCode]=useState<string|null>(null);
 
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
+  const [newServerName, setNewServerName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  // ---------------- FETCH SERVERS ----------------
   useEffect(() =>
   {
     async function fetchServers()
@@ -69,6 +73,7 @@ export default function ChannelPage()
     fetchServers();
   }, []);
 
+  // ---------------- FETCH CHANNELS ----------------
   useEffect(() =>
   {
     if (!selectedServer) return;
@@ -95,9 +100,10 @@ export default function ChannelPage()
     fetchChannels();
   }, [selectedServer]);
 
+  // ---------------- FETCH MESSAGES ----------------
   useEffect(() =>
   {
-    if (!channelId) return;
+    if (!channelId || !selectedServer) return;
 
     async function fetchMessages()
     {
@@ -105,7 +111,9 @@ export default function ChannelPage()
 
       try
       {
-        const res = await api.get(`/server/${selectedServer}/channels/${channelId}/messages`);
+        const res = await api.get(
+          `/server/${selectedServer}/channels/${channelId}/messages`
+        );
         setMessages(res.data);
       }
       catch
@@ -119,33 +127,81 @@ export default function ChannelPage()
     }
 
     fetchMessages();
-  }, [channelId]);
+  }, [channelId, selectedServer]);
 
-  async function handleCreateServer(){
+  // ---------------- CREATE SERVER ----------------
+  async function handleCreateServer()
+  {
+    if (!newServerName.trim()) return;
 
-    if(!newServerName.trim()) return;
-    try{
-      const res=await api.post('/server/create',{
-        name:newServerName
+    try
+    {
+      const res = await api.post("/server/create", {
+        name: newServerName
       });
+
       setShowCreateModal(false);
       setNewServerName("");
-      const updated=await api.get('/server');
+
+      const updated = await api.get("/server");
       setServers(updated.data.servers);
-      if(updated.data.server.length>0){
+
+      if (updated.data.servers.length > 0)
+      {
         setSelectedServer(updated.data.servers[0].id);
       }
+
       setCreatedInviteCode(res.data.server.invite_code);
-    }catch{
-      console.error("Failed to create server sir");
+    }
+    catch
+    {
+      console.error("Failed to create server");
+    }
+  }
+
+  // ---------------- JOIN SERVER ----------------
+  async function handleJoinServer()
+  {
+    if (!inviteCode.trim()) return;
+
+    setJoinError(null);
+
+    try
+    {
+      await api.post("/server/join", {
+        inviteCode
+      });
+
+      const updated = await api.get("/server");
+      setServers(updated.data.servers);
+
+      if (updated.data.servers.length > 0)
+      {
+        setSelectedServer(updated.data.servers[0].id);
+      }
+
+      setInviteCode("");
+      setShowJoinModal(false);
+    }
+    catch (err: unknown)
+    {
+      if (axios.isAxiosError(err))
+      {
+        setJoinError(err.response?.data?.message || "Invalid code");
+      }
+      else
+      {
+        setJoinError("Invalid code");
+      }
     }
   }
 
   return (
     <div className="h-screen flex bg-zinc-900 text-white">
 
-      {/* Servers Sidebar */}
+      {/* SERVERS SIDEBAR */}
       <div className="w-20 bg-zinc-950 flex flex-col items-center py-4 gap-4">
+
         {loadingServers && <div className="text-xs">...</div>}
 
         {servers.map((server) => (
@@ -161,26 +217,27 @@ export default function ChannelPage()
             {server.name[0]}
           </div>
         ))}
+
+        <div className="mt-auto flex flex-col gap-3">
+
+          <div
+            onClick={() => setShowCreateModal(true)}
+            className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-green-500"
+          >
+            +
+          </div>
+
+          <div
+            onClick={() => setShowJoinModal(true)}
+            className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-500"
+          >
+            J
+          </div>
+
+        </div>
       </div>
-      <div className="mt-auto flex flex-col gap-3">
 
-  <div
-    onClick={() => setShowCreateModal(true)}
-    className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-green-500 transition"
-  >
-    +
-  </div>
-
-  <div
-    onClick={() => setShowJoinModal(true)}
-    className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center cursor-pointer hover:bg-blue-500 transition"
-  >
-    J
-  </div>
-
-</div>
-
-      {/* Channels Sidebar */}
+      {/* CHANNELS SIDEBAR */}
       <div className="w-60 bg-zinc-800 p-4">
         <h2 className="text-lg font-semibold mb-4">
           {selectedServer ? "Channels" : "Select Server"}
@@ -203,15 +260,13 @@ export default function ChannelPage()
         ))}
       </div>
 
-      {/* Chat Section */}
+      {/* CHAT SECTION */}
       <div className="flex-1 flex flex-col">
 
-        {/* Header */}
         <div className="h-14 border-b border-zinc-700 flex items-center px-6 font-semibold">
           Channel: {channelId}
         </div>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {loadingMessages && <div>Loading messages...</div>}
 
@@ -222,91 +277,18 @@ export default function ChannelPage()
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">
-                    {msg.sender_id}
-                  </span>
+                  <span className="font-semibold">{msg.sender_id}</span>
                   <span className="text-xs text-zinc-400">
                     {new Date(msg.created_at).toLocaleTimeString()}
                   </span>
                 </div>
-                <div className="text-zinc-300">
-                  {msg.content}
-                </div>
+                <div className="text-zinc-300">{msg.content}</div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Input */}
-        <div className="p-4 border-t border-zinc-700">
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="w-full bg-zinc-800 text-white px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-indigo-600"
-          />
-        </div>
-      </div>
-      {/* Create Server Modal */}
-{showCreateModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-    <div className="bg-zinc-800 p-6 rounded-lg w-80 space-y-4">
-      <h2 className="text-lg font-semibold">Create Server</h2>
-      <input
-        type="text"
-        placeholder="Server name"
-        value={newServerName}
-        onChange={(e) => setNewServerName(e.target.value)}
-        className="w-full bg-zinc-700 px-3 py-2 rounded-md outline-none"
-      />
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => setShowCreateModal(false)}
-          className="px-3 py-1 bg-zinc-600 rounded-md"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleCreateServer}
-          className="px-3 py-1 bg-green-600 rounded-md"
-        >
-          Create
-        </button>
       </div>
     </div>
-  </div>
-)}
-
-{/* Join Server Modal */}
-{showJoinModal && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-    <div className="bg-zinc-800 p-6 rounded-lg w-80 space-y-4">
-      <h2 className="text-lg font-semibold">Join Server</h2>
-      <input
-        type="text"
-        placeholder="Invite Code"
-        value={inviteCode}
-        onChange={(e) => setInviteCode(e.target.value)}
-        className="w-full bg-zinc-700 px-3 py-2 rounded-md outline-none"
-      />
-      <div className="flex justify-end gap-3">
-        <button
-          onClick={() => setShowJoinModal(false)}
-          className="px-3 py-1 bg-zinc-600 rounded-md"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleJoinServer}
-          className="px-3 py-1 bg-blue-600 rounded-md"
-        >
-          Join
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-    </div>
-    
   );
 }
