@@ -151,9 +151,13 @@ All read `req.userId` + `req.params.serverId`, fetch role from `server_members`,
 
 ## Channels (`/server/:serverId/channels`)
 
+
 | Method | Path | Auth required | Description |
 |---|---|---|---|
-| POST | `/` | `checkServerAdminOrModerator` | Create a channel in server |
+| POST | `/server/:serverId/channels` | `checkServerAdminOrModerator` | Create a channel in server |
+| GET | `/server/:serverId/channels` | Member | Get all channels in server |
+| PATCH | `/server/:serverId/channels/:channelId` | `checkServerAdminOrModerator` | Rename a channel |
+| DELETE | `/server/:serverId/channels/:channelId` | `checkServerAdminOrModerator` (Owner only for delete) | Delete a channel |
 
 ## Messages (`/server/:serverId/channels/:channelId/messages`)
 

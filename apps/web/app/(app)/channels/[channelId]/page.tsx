@@ -43,11 +43,11 @@ export default function ChannelPage()
       try
       {
         const res = await api.get("/server");
-        setServers(res.data);
+        setServers(res.data.servers);
 
-        if (res.data.length > 0)
+        if (res.data.servers.length > 0)
         {
-          setSelectedServer(res.data[0].id);
+          setSelectedServer(res.data.servers[0].id);
         }
       }
       catch
