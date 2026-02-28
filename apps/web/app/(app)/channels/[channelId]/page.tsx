@@ -5,17 +5,20 @@ import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import axios from "axios";
 
-type Server = {
+type Server =
+{
   id: string;
   name: string;
 };
 
-type Channel = {
+type Channel =
+{
   id: string;
   name: string;
 };
 
-type Message = {
+type Message =
+{
   id: string;
   content: string;
   sender_id: string;
@@ -53,16 +56,17 @@ export default function ChannelPage()
       try
       {
         const res = await api.get("/server");
-        setServers(res.data.servers);
+        const serverList = res.data.servers;
+        setServers(serverList);
 
-        if (res.data.servers.length > 0)
+        if (serverList.length > 0)
         {
-          setSelectedServer(res.data.servers[0].id);
+          setSelectedServer(serverList[0].id);
         }
       }
-      catch
+      catch (err)
       {
-        console.error("Failed to fetch servers");
+        console.error("Failed to fetch servers", err);
       }
       finally
       {
@@ -81,15 +85,14 @@ export default function ChannelPage()
     async function fetchChannels()
     {
       setLoadingChannels(true);
-
       try
       {
         const res = await api.get(`/server/${selectedServer}/channels`);
         setChannels(res.data);
       }
-      catch
+      catch (err)
       {
-        console.error("Failed to fetch channels");
+        console.error("Failed to fetch channels", err);
       }
       finally
       {
@@ -108,7 +111,6 @@ export default function ChannelPage()
     async function fetchMessages()
     {
       setLoadingMessages(true);
-
       try
       {
         const res = await api.get(
@@ -116,9 +118,9 @@ export default function ChannelPage()
         );
         setMessages(res.data);
       }
-      catch
+      catch (err)
       {
-        console.error("Failed to fetch messages");
+        console.error("Failed to fetch messages", err);
       }
       finally
       {
@@ -140,22 +142,18 @@ export default function ChannelPage()
         name: newServerName
       });
 
-      setShowCreateModal(false);
+      const newServer = res.data.server;
+
+      setServers((prev) => [...prev, newServer]);
+      setSelectedServer(newServer.id);
+
+      setCreatedInviteCode(newServer.invite_code);
       setNewServerName("");
-
-      const updated = await api.get("/server");
-      setServers(updated.data.servers);
-
-      if (updated.data.servers.length > 0)
-      {
-        setSelectedServer(updated.data.servers[0].id);
-      }
-
-      setCreatedInviteCode(res.data.server.invite_code);
+      setShowCreateModal(false);
     }
-    catch
+    catch (err)
     {
-      console.error("Failed to create server");
+      console.error("Failed to create server", err);
     }
   }
 
@@ -168,17 +166,19 @@ export default function ChannelPage()
 
     try
     {
-      await api.post("/server/join", {
+      const res = await api.post("/server/join", {
         inviteCode
       });
 
-      const updated = await api.get("/server");
-      setServers(updated.data.servers);
+      const joinedServer = res.data.server;
 
-      if (updated.data.servers.length > 0)
+      setServers((prev) =>
       {
-        setSelectedServer(updated.data.servers[0].id);
-      }
+        if (prev.find((s) => s.id === joinedServer.id)) return prev;
+        return [...prev, joinedServer];
+      });
+
+      setSelectedServer(joinedServer.id);
 
       setInviteCode("");
       setShowJoinModal(false);
@@ -289,6 +289,83 @@ export default function ChannelPage()
         </div>
 
       </div>
+
+      {/* CREATE SERVER MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-800 p-6 rounded-lg w-80 space-y-4">
+            <h3 className="text-lg font-semibold">Create Server</h3>
+
+            <input
+              type="text"
+              placeholder="Server name"
+              value={newServerName}
+              onChange={(e) => setNewServerName(e.target.value)}
+              className="w-full px-3 py-2 rounded bg-zinc-700 text-white outline-none"
+            />
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-3 py-1 bg-zinc-600 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleCreateServer}
+                className="px-3 py-1 bg-indigo-600 rounded"
+              >
+                Create
+              </button>
+            </div>
+
+            {createdInviteCode && (
+              <div className="text-sm text-green-400">
+                Invite Code: {createdInviteCode}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* JOIN SERVER MODAL */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-zinc-800 p-6 rounded-lg w-80 space-y-4">
+            <h3 className="text-lg font-semibold">Join Server</h3>
+
+            <input
+              type="text"
+              placeholder="Invite code"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              className="w-full px-3 py-2 rounded bg-zinc-700 text-white outline-none"
+            />
+
+            {joinError && (
+              <div className="text-sm text-red-400">{joinError}</div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowJoinModal(false)}
+                className="px-3 py-1 bg-zinc-600 rounded"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleJoinServer}
+                className="px-3 py-1 bg-indigo-600 rounded"
+              >
+                Join
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
