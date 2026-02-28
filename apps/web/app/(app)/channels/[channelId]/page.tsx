@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/api";
 import axios from "axios";
@@ -48,6 +48,8 @@ export default function ChannelPage()
   const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
 
+  const hasInitialized = useRef(false);
+
   // ---------------- FETCH SERVERS ----------------
   useEffect(() =>
   {
@@ -59,9 +61,16 @@ export default function ChannelPage()
         const serverList = res.data.servers;
         setServers(serverList);
 
-        if (serverList.length > 0)
+        if (!hasInitialized.current && serverList.length > 0)
         {
-          setSelectedServer(serverList[0].id);
+          // Try to get from localStorage, otherwise use first server
+          const savedServer = localStorage.getItem("selectedServer");
+          const serverExists = serverList.some((s: { id: string }) => s.id === savedServer);
+          const serverToSelect = (serverExists && savedServer) || serverList[0].id;
+          
+          setSelectedServer(serverToSelect);
+          localStorage.setItem("selectedServer", serverToSelect);
+          hasInitialized.current = true;
         }
       }
       catch (err)
@@ -76,6 +85,13 @@ export default function ChannelPage()
 
     fetchServers();
   }, []);
+
+  // Track selected server in localStorage
+  useEffect(() => {
+    if (selectedServer) {
+      localStorage.setItem("selectedServer", selectedServer);
+    }
+  }, [selectedServer]);
 
   // ---------------- FETCH CHANNELS ----------------
   useEffect(() =>
