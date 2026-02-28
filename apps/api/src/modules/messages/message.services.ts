@@ -82,15 +82,16 @@ export async function getMessage(
       throw new Error('Unauthorize');
     }
 
-    let query = `
-      select * from
-      messages
-      where channel_id=$1    
-    `;
+      let query = `
+        select m.*, u.username from
+        messages m
+        join users u on m.sender_id = u.id
+        where m.channel_id = $1
+      `;
     const values: any[] = [channelId];
 
     if (cursor) {
-      query += `And created_at <$2`;
+        query += ` and m.created_at < $2`;
       values.push(cursor);
     }
     query += `

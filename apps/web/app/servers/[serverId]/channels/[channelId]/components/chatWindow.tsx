@@ -5,6 +5,7 @@ import { useState } from "react";
 type Message =
   {
     id: string;
+    username: string;
     content: string;
     sender_id: string;
     created_at: string;
@@ -59,7 +60,7 @@ export default function ChatWindow({
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-semibold">{msg.sender_id}</span>
+                <span className="font-semibold">{msg.username}</span>
                 <span className="text-xs text-zinc-400">
                   {new Date(msg.created_at).toLocaleTimeString()}
                 </span>
