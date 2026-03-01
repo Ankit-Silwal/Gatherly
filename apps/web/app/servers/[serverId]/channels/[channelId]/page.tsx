@@ -29,6 +29,40 @@ export default function ChannelPage() {
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const addMessage = useChatStore((state) => state.addMessage)
+
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const [newServerName, setNewServerName] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+
+  // Create Server
+  async function handleCreateServer() {
+    try {
+      await api.post("/server/create", { name: newServerName });
+      setIsCreateOpen(false);
+      setNewServerName("");
+      // Refresh servers
+      const res = await api.get("/server");
+      setServers(res.data.servers);
+    } catch (err) {
+      console.error("Failed to create server", err);
+    }
+  }
+
+  // Join Server
+  async function handleJoinServer() {
+    try {
+      await api.post("/server/join", { inviteCode });
+      setIsJoinOpen(false);
+      setInviteCode("");
+      // Refresh servers
+      const res = await api.get("/server");
+      setServers(res.data.servers);
+    } catch (err) {
+      console.error("Failed to join server", err);
+    }
+  }
+
   // Fetch Servers
   useEffect(() => {
     async function fetchServers() {
@@ -119,9 +153,65 @@ export default function ChannelPage() {
         onSelect={(id) =>
           router.push(`/servers/${id}/channels/${channelId}`)
         }
-        onCreate={() => { }}
-        onJoin={() => { }}
+        onCreate={() => setIsCreateOpen(true)}
+        onJoin={() => setIsJoinOpen(true)}
       />
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-[#313338] p-6 rounded-md w-96 shadow-lg">
+            <h2 className="text-xl font-bold mb-4 text-white">Create a Server</h2>
+            <input
+              className="w-full bg-[#1E1F22] text-white p-2 rounded mb-4 outline-none"
+              placeholder="Server Name"
+              value={newServerName}
+              onChange={(e) => setNewServerName(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsCreateOpen(false)}
+                className="px-4 py-2 hover:underline text-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateServer}
+                className="px-4 py-2 bg-[#5865F2] text-white rounded hover:bg-[#4752C4]"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isJoinOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-[#313338] p-6 rounded-md w-96 shadow-lg">
+            <h2 className="text-xl font-bold mb-4 text-white">Join a Server</h2>
+            <input
+              className="w-full bg-[#1E1F22] text-white p-2 rounded mb-4 outline-none"
+              placeholder="Invite Code"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setIsJoinOpen(false)}
+                className="px-4 py-2 hover:underline text-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleJoinServer}
+                className="px-4 py-2 bg-[#23A559] text-white rounded hover:bg-[#1A7F42]"
+              >
+                Join Server
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ChannelSidebar
         channels={channels}
