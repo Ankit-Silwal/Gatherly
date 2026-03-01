@@ -1,5 +1,4 @@
 "use client";
-import api from "@/lib/api";
 import { useChatStore } from "@/store/useChatStore";
 import { useState } from "react";
 type Message =
@@ -15,6 +14,7 @@ type Props =
   {
     messages: Message[];
     channelId: string;
+    channelName: string;
     serverId: string;
     loading: boolean;
   };
@@ -22,22 +22,22 @@ type Props =
 export default function ChatWindow({
   messages,
   channelId,
+  channelName,
   serverId,
   loading
 }: Props) {
   const addMessage = useChatStore((state) => state.addMessage);
   const [input, setInput] = useState<string>("");
+  const socket = useChatStore((s) => s.socket);
   async function handleSend() {
-    if (!input.trim()) return;
-    try {
-      const res = await api.post(`/server/${serverId}/channels/${channelId}/messages`, {
-        content: input
-      });
-      addMessage(res.data)
-      setInput("");
-    } catch (err) {
-      console.error("send failed", err);
-    }
+    if (!input.trim() || !socket) return;
+    console.log("emtting message", channelId)
+    socket.emit("send_message", {
+      channelId,
+      content: input
+    });
+    console.log("sending ")
+    setInput("");
   }
 
   const formatDate = (dateString: string) => {
@@ -62,8 +62,8 @@ export default function ChatWindow({
           <svg className="w-6 h-6 text-[#80848E] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
           </svg>
-          <span className="font-bold text-base mr-2">{channelId}</span>
-          <span className="text-zinc-400 text-xs hidden sm:block truncate max-w-[400px]">| This is the beginning of the #{channelId} channel.</span>
+          <span className="font-bold text-base mr-2">{channelName}</span>
+          <span className="text-zinc-400 text-xs hidden sm:block truncate max-w-[400px]">| This is the beginning of the #{channelName} channel.</span>
         </div>
 
         <div className="ml-auto flex items-center gap-4 text-[#B5BAC1]">
@@ -140,7 +140,7 @@ export default function ChatWindow({
           <input
             type="text"
             value={input ?? ""}
-            placeholder={`Message #${channelId}`}
+            placeholder={`Message #${channelName}`}
             className="flex-1 bg-transparent text-[#DBDEE1] outline-none placeholder-[#949BA4]"
             onChange={(e) => {
               setInput(e.target.value)

@@ -29,11 +29,31 @@ export default function ChannelPage() {
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const addMessage = useChatStore((state) => state.addMessage)
+  const setSocket = useChatStore((s) => s.setSocket);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [newServerName, setNewServerName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+  useEffect(() => {
+    if (!channelId) return;
+    const socket = io("http://localhost:8000", {
+      withCredentials: true
+    });
+
+    setSocket(socket);
+
+    socket.emit("join_channel", channelId);
+    socket.on("receive_message", (message) => {
+      addMessage(message);
+    })
+
+    return () => {
+      socket.emit("leave_channel", channelId);
+      socket.disconnect();
+    }
+
+  }, [channelId])
 
   // Create Server
   async function handleCreateServer() {
@@ -144,6 +164,9 @@ export default function ChannelPage() {
     fetchMessages();
   }, [serverId, channelId]);
 
+  const currentChannel = channels.find((c) => c.id === channelId);
+  const channelName = currentChannel?.name || channelId;
+
   return (
     <div className="h-screen flex bg-[#1E1F22] text-white font-sans overflow-hidden">
 
@@ -222,6 +245,7 @@ export default function ChannelPage() {
       <ChatWindow
         messages={messages}
         channelId={channelId}
+        channelName={channelName}
         serverId={serverId}
         loading={loadingMessages}
       />
