@@ -82,7 +82,7 @@ export async function getMessage(
       throw new Error('Unauthorize');
     }
 
-      let query = `
+    let query = `
         select m.*, u.username from
         messages m
         join users u on m.sender_id = u.id
@@ -91,16 +91,16 @@ export async function getMessage(
     const values: any[] = [channelId];
 
     if (cursor) {
-        query += ` and m.created_at < $2`;
+      query += ` and m.created_at < $2`;
       values.push(cursor);
     }
     query += `
-      order by created_at asc
+      order by created_at desc
       limit ${limit}
     `;
 
     const result = await client.query(query, values);
-    return result.rows;
+    return result.rows.reverse();
   } finally {
     client.release();
   }

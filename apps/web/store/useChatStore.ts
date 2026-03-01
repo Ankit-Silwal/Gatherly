@@ -30,7 +30,7 @@ type ChatStore = {
   setChannels: (channels: Channel[]) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
-  setSocket: (socket: Socket) => void;
+  setSocket: (socket: Socket | null) => void;
 };
 
 export const useChatStore = create<ChatStore>((set) => ({

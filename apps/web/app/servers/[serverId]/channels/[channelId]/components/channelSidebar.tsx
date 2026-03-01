@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 type Channel = {
   id: string;
@@ -15,6 +16,16 @@ type Props = {
 
 export default function ChannelSidebar({ channels, channelId, serverId }: Props) {
   const router = useRouter();
+  const activeChannelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeChannelRef.current) {
+      activeChannelRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [channelId]);
 
   return (
     <div className="w-60 bg-[#232428] flex flex-col h-full rounded-tl-xl overflow-hidden">
@@ -41,6 +52,7 @@ export default function ChannelSidebar({ channels, channelId, serverId }: Props)
           return (
             <div
               key={channel.id}
+              ref={isActive ? activeChannelRef : null}
               onClick={() => router.push(`/servers/${serverId}/channels/${channel.id}`)}
               className={`group px-2 py-[6px] rounded flex items-center cursor-pointer transition-colors mx-[2px] ${isActive
                 ? "bg-[#404249] text-white"

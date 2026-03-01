@@ -35,25 +35,28 @@ export default function ChannelPage() {
   const [isJoinOpen, setIsJoinOpen] = useState(false);
   const [newServerName, setNewServerName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
+
   useEffect(() => {
     if (!channelId) return;
+
     const socket = io("http://localhost:8000", {
       withCredentials: true
     });
-
-    setSocket(socket);
+    setSocket(socket)
 
     socket.emit("join_channel", channelId);
+
     socket.on("receive_message", (message) => {
       addMessage(message);
-    })
+    });
 
     return () => {
       socket.emit("leave_channel", channelId);
       socket.disconnect();
-    }
+      setSocket(null);
+    };
 
-  }, [channelId])
+  }, [channelId, addMessage]);
 
   // Create Server
   async function handleCreateServer() {
@@ -98,25 +101,7 @@ export default function ChannelPage() {
     fetchServers();
   }, []);
 
-  useEffect(() => {
-    if (!channelId) return;
 
-    const socket = io("http://localhost:8000", {
-      withCredentials: true
-    });
-
-    socket.emit("join_channel", channelId);
-
-    socket.on("receive_message", (message) => {
-      addMessage(message);
-    });
-
-    return () => {
-      socket.emit("leave_channel", channelId);
-      socket.disconnect();
-    };
-
-  }, [channelId, addMessage]);
 
   // Fetch Channels
   useEffect(() => {

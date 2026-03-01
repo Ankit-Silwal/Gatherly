@@ -1,6 +1,6 @@
 "use client";
 import { useChatStore } from "@/store/useChatStore";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 type Message =
   {
     id: string;
@@ -39,6 +39,11 @@ export default function ChatWindow({
     console.log("sending ")
     setInput("");
   }
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -127,6 +132,7 @@ export default function ChatWindow({
             </div>
           );
         })}
+        <div ref={bottomRef} />
       </div>
 
       {/* Input Area */}
