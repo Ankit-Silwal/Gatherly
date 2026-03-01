@@ -111,7 +111,7 @@ export default function ChannelPage() {
   }, [serverId, channelId]);
 
   return (
-    <div className="h-screen flex bg-zinc-900 text-white">
+    <div className="h-screen flex bg-[#1E1F22] text-white font-sans overflow-hidden">
 
       <ServerSidebar
         servers={servers}
