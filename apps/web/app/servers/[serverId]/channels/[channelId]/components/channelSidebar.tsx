@@ -12,9 +12,10 @@ type Props = {
   channels: Channel[];
   channelId: string;
   serverId: string;
+  serverName?: string;
 };
 
-export default function ChannelSidebar({ channels, channelId, serverId }: Props) {
+export default function ChannelSidebar({ channels, channelId, serverId, serverName = "Server Name" }: Props) {
   const router = useRouter();
   const activeChannelRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +32,7 @@ export default function ChannelSidebar({ channels, channelId, serverId }: Props)
     <div className="w-60 bg-[#232428] flex flex-col h-full rounded-tl-xl overflow-hidden">
       {/* Server Header */}
       <div className="h-12 flex items-center px-4 font-bold text-white shadow-sm hover:bg-[#35373C] transition-colors cursor-pointer border-b border-[#1F2023]">
-        <span className="truncate">Server Name</span>
+        <span className="truncate">{serverName}</span>
         <svg className="ml-auto w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>

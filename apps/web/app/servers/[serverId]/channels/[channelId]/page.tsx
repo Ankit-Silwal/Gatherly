@@ -150,8 +150,7 @@ export default function ChannelPage() {
   }, [serverId, channelId]);
 
   const currentChannel = channels.find((c) => c.id === channelId);
-  const channelName = currentChannel?.name || channelId;
-
+  const channelName = currentChannel?.name || channelId; const currentServer = servers.find((s) => s.id === serverId);
   return (
     <div className="h-screen flex bg-[#1E1F22] text-white font-sans overflow-hidden">
 
@@ -225,6 +224,7 @@ export default function ChannelPage() {
         channels={channels}
         channelId={channelId}
         serverId={serverId}
+        serverName={currentServer?.name}
       />
 
       <ChatWindow

@@ -29,9 +29,16 @@ export async function createMessage(channelId: string, content: string, senderId
     if (membership.rowCount === 0) throw new Error('Unauthorized');
     const result = await client.query(
       `
-      INSERT INTO messages (channel_id, sender_id, content)
-      VALUES ($1, $2, $3)
-      RETURNING *
+      WITH inserted_message AS (
+        INSERT INTO messages (channel_id, sender_id, content)
+        VALUES ($1, $2, $3)
+        RETURNING *
+      )
+      SELECT 
+        m.*, 
+        u.username
+      FROM inserted_message m
+      JOIN users u ON m.sender_id = u.id
       `,
       [channelId, senderId, content]
     );
