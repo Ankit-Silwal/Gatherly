@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Channel = {
   id: string;
@@ -18,6 +18,21 @@ type Props = {
 export default function ChannelSidebar({ channels, channelId, serverId, serverName = "Server Name" }: Props) {
   const router = useRouter();
   const activeChannelRef = useRef<HTMLDivElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Modal States
+  const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
+  const [isRenameServerOpen, setIsRenameServerOpen] = useState(false);
+  const [isLeaveServerOpen, setIsLeaveServerOpen] = useState(false);
+
+  useEffect(() => {
+    // Close menu when clicking outside (simple check)
+    const handleClick = () => setIsMenuOpen(false);
+    if (isMenuOpen) {
+      window.addEventListener("click", handleClick);
+    }
+    return () => window.removeEventListener("click", handleClick);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (activeChannelRef.current) {
@@ -29,14 +44,64 @@ export default function ChannelSidebar({ channels, channelId, serverId, serverNa
   }, [channelId]);
 
   return (
-    <div className="w-60 bg-[#232428] flex flex-col h-full rounded-tl-xl overflow-hidden">
+    <div className="w-60 bg-[#232428] flex flex-col h-full rounded-tl-xl overflow-hidden relative">
       {/* Server Header */}
-      <div className="h-12 flex items-center px-4 font-bold text-white shadow-sm hover:bg-[#35373C] transition-colors cursor-pointer border-b border-[#1F2023]">
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsMenuOpen(!isMenuOpen);
+        }}
+        className="h-12 flex items-center px-4 font-bold text-white shadow-sm hover:bg-[#35373C] transition-colors cursor-pointer border-b border-[#1F2023] relative z-20"
+      >
         <span className="truncate">{serverName}</span>
-        <svg className="ml-auto w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`ml-auto w-4 h-4 text-zinc-400 transition-transform ${isMenuOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </div>
+
+      {isMenuOpen && (
+        <div className="absolute top-12 left-2 right-2 bg-[#111214] rounded p-1.5 shadow-xl z-30 animate-in fade-in slide-in-from-top-2 border border-[#1e1f22]">
+          <div
+            className="flex items-center justify-between px-2 py-2 rounded hover:bg-[#5865F2] hover:text-white text-[#B5BAC1] cursor-pointer text-sm mb-0.5 font-medium transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCreateChannelOpen(true);
+              setIsMenuOpen(false);
+            }}
+          >
+            Create Channel
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" /></svg>
+          </div>
+
+          <div className="h-[1px] bg-[#1e1f22] my-1 mx-1" />
+
+          <div
+            className="flex items-center justify-between px-2 py-2 rounded hover:bg-[#5865F2] hover:text-white text-[#B5BAC1] cursor-pointer text-sm mb-0.5 font-medium transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRenameServerOpen(true);
+              setIsMenuOpen(false);
+            }}
+          >
+            Rename Server
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+          </div>
+
+          <div className="h-[1px] bg-[#1e1f22] my-1 mx-1" />
+
+          <div
+            className="flex items-center justify-between px-2 py-2 rounded hover:bg-[#DA373C] hover:text-white text-[#DA373C] cursor-pointer text-sm font-medium transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLeaveServerOpen(true);
+              setIsMenuOpen(false);
+            }}
+          >
+            Leave Server
+          </div>
+        </div>
+      )}
+
 
       {/* Channel List */}
       <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
@@ -113,6 +178,111 @@ export default function ChannelSidebar({ channels, channelId, serverId, serverNa
           </button>
         </div>
       </div>
+
+      {/* Create Channel Modal */}
+      {isCreateChannelOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setIsCreateChannelOpen(false)}>
+          <div
+            className="bg-[#313338] rounded-md shadow-lg w-full max-w-md p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-white mb-4">Create Channel</h2>
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-zinc-400 uppercase mb-2">Channel Name</label>
+              <div className="flex items-center bg-[#1E1F22] rounded p-2">
+                <span className="text-zinc-400 mr-2">#</span>
+                <input
+                  type="text"
+                  placeholder="new-channel"
+                  className="bg-transparent text-white focus:outline-none w-full"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="flex justify-end bg-[#2B2D31] -m-6 mt-0 p-4 rounded-b-md">
+              <button
+                onClick={() => setIsCreateChannelOpen(false)}
+                className="text-white px-4 py-2 text-sm font-medium hover:underline mr-4"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setIsCreateChannelOpen(false)}
+                className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-6 py-2 rounded text-sm font-medium transition-colors"
+              >
+                Create Channel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Server Modal */}
+      {isRenameServerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setIsRenameServerOpen(false)}>
+          <div
+            className="bg-[#313338] rounded-md shadow-lg w-full max-w-md p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-white mb-2">Rename Server</h2>
+            <p className="text-zinc-400 text-sm mb-6 text-center">
+              Enter a new name for your server.
+            </p>
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-zinc-400 uppercase mb-2">Server Name</label>
+              <input
+                type="text"
+                defaultValue={serverName}
+                className="w-full bg-[#1E1F22] text-white p-2 rounded focus:outline-none"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end bg-[#2B2D31] -m-6 mt-0 p-4 rounded-b-md">
+              <button
+                onClick={() => setIsRenameServerOpen(false)}
+                className="text-white px-4 py-2 text-sm font-medium hover:underline mr-4"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setIsRenameServerOpen(false)}
+                className="bg-[#5865F2] hover:bg-[#4752C4] text-white px-6 py-2 rounded text-sm font-medium transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Server Modal */}
+      {isLeaveServerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setIsLeaveServerOpen(false)}>
+          <div
+            className="bg-[#313338] rounded-md shadow-lg w-full max-w-md p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-white mb-2">Leave &apos;{serverName}&apos;</h2>
+            <p className="text-zinc-400 text-sm mb-6">
+              Are you sure you want to leave <span className="font-bold text-white">{serverName}</span>? You won&apos;t be able to rejoin unless you are re-invited.
+            </p>
+            <div className="flex justify-end bg-[#2B2D31] -m-6 mt-0 p-4 rounded-b-md">
+              <button
+                onClick={() => setIsLeaveServerOpen(false)}
+                className="text-white px-4 py-2 text-sm font-medium hover:underline mr-4"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setIsLeaveServerOpen(false)}
+                className="bg-[#DA373C] hover:bg-[#A1282C] text-white px-6 py-2 rounded text-sm font-medium transition-colors"
+              >
+                Leave Server
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
