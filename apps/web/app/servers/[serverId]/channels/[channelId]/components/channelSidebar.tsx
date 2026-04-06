@@ -1,5 +1,6 @@
 "use client";
 
+import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -24,7 +25,16 @@ export default function ChannelSidebar({ channels, channelId, serverId, serverNa
   const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
   const [isRenameServerOpen, setIsRenameServerOpen] = useState(false);
   const [isLeaveServerOpen, setIsLeaveServerOpen] = useState(false);
+  const [channelName, setChannelName] = useState<string>("")
+  const [newServerName, setNewServerName] = useState<string>("")
 
+  // async function handleCreateChannel(){
+  //   if(!channelName.trim()) return;
+
+  //   try{
+  //     const res=await api.post(`server/`)
+  //   }
+  // }
   useEffect(() => {
     // Close menu when clicking outside (simple check)
     const handleClick = () => setIsMenuOpen(false);
@@ -196,6 +206,9 @@ export default function ChannelSidebar({ channels, channelId, serverId, serverNa
                   placeholder="new-channel"
                   className="bg-transparent text-white focus:outline-none w-full"
                   autoFocus
+                  onChange={(e) => {
+                    setChannelName(e.target.value)
+                  }}
                 />
               </div>
             </div>
@@ -235,6 +248,9 @@ export default function ChannelSidebar({ channels, channelId, serverId, serverNa
                 defaultValue={serverName}
                 className="w-full bg-[#1E1F22] text-white p-2 rounded focus:outline-none"
                 autoFocus
+                onChange={(e) => {
+                  setNewServerName(e.target.value)
+                }}
               />
             </div>
             <div className="flex justify-end bg-[#2B2D31] -m-6 mt-0 p-4 rounded-b-md">

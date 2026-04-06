@@ -22,29 +22,29 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const router=useRouter();
-  const [email,setEmail]=useState<string>("");
-  const [password,setPassword]=useState<string>("");
-  const [error,setError]=useState<string>("");
-  const [success,setSuccess]=useState<string>("");
-  const handleLogin=async (e:React.FormEvent<HTMLFormElement>)=>{
+  const router = useRouter();
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    try{
-      const res=await api.post('/auth/login',{
+    try {
+      const res = await api.post('/auth/login', {
         email,
         password
       })
-      if(res.status===200){
+      if (res.status === 200) {
         setSuccess("Login successful");
-        router.push('/dashboard')
-      }else{
+        router.push('/servers')
+      } else {
         setError(res.data.message);
       }
-    }catch(err){
+    } catch (err) {
       const error = err as AxiosError<{ message?: string }>;
-      if (error.response && error.response.data && error.response.data.message) {
+      if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
         setError("Login failed");
@@ -70,7 +70,7 @@ export function LoginForm({
                   type="email"
                   placeholder="m@example.com"
                   required
-                  onChange={(e)=>{
+                  onChange={(e) => {
                     setEmail(e.target.value)
                   }}
                 />
@@ -78,24 +78,25 @@ export function LoginForm({
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
+                  <button
+                    type="button"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline cursor-pointer">
                     Forgot your password?
-                  </a>
+                  </button>
                 </div>
-                <Input id="password" type="password" required onChange={(e)=>{
+                <Input id="password" type="password" required onChange={(e) => {
                   setPassword(e.target.value)
-                }}/>
+                }} />
               </Field>
               {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
               {success && <p className="text-green-500 text-sm mt-2">{success}</p>}
               <Field>
                 <Button type="submit" className="cursor-pointer">Login</Button>
-                
+
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a className="cursor-pointer" onClick={()=>{
+                  Don&apos;t have an account? <button type="button" className="cursor-pointer" onClick={() => {
                     router.push('/signup')
-                  }}>Sign up</a>
+                  }}>Sign up</button>
                 </FieldDescription>
               </Field>
             </FieldGroup>
